@@ -569,7 +569,7 @@ void bookDuplicateRateSet(RecoTrackSetDefinition& DRset) {
   // ana.tx.createBranch<std::vector<float>>(category_name + "_dr_numer_deltaR"); // Added by Kasia
 
   // Histogram utility object that is used to define the histograms
-  ana.histograms.addVecHistogram(category_name + "_dr_denom_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_dr_denom_pt", 50, 0, 2500, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_dr_denom_pt");
   });
   ana.histograms.addVecHistogram(category_name + "_dr_denom_ptlow", getPtBounds(4), [&, category_name]() {
