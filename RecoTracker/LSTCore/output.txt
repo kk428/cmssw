@@ -1,0 +1,42 @@
+                                                                                                    RooUtil:: TRACKLOOPERDIR=/mnt/data1/kk829/CMSSW_15_1_0_pre6/src/RecoTracker/LSTCore/standalone
+=========================================================
+ Running for Acc = AccCpuSerial<3,unsigned int>
+ Setting of the analysis job based on provided arguments 
+---------------------------------------------------------
+ ana.input_file_list_tstring: new_tree_1.root
+ ana.output_tfile: LSTNtuple.root
+ ana.n_events: -1
+ ana.nsplit_jobs: -1
+ ana.job_index: -1
+ ana.specific_event_index: -1
+ ana.do_write_ntuple: 1
+ ana.mode: 5
+ ana.streams: 1
+ ana.verbose: 1
+ ana.nmatch_threshold: 9
+ ana.tc_pls_triplets: 0
+ ana.no_pls_dupclean: 0
+=========================================================
+>>> Hostname is lnx4555.classe.cornell.edu
+inputs : new_tree_1.root
+                                                                                                    RooUtil:: Adding new_tree_1.root
+                                                                                                    RooUtil:: Start EventLooping
+                                                                                                    RooUtil:: System info:
+lnx4555.classe.cornell.edu
+Linux lnx4555.classe.cornell.edu 5.14.0-570.37.1.el9_6.x86_64 #1 SMP PREEMPT_DYNAMIC Tue Aug 26 10:33:12 EDT 2025 x86_64 x86_64 x86_64 GNU/Linux
+Wed Sep 10 14:05:26 EDT 2025
+kk829
+/mnt/data1/kk829/CMSSW_15_1_0_pre6/src/RecoTracker/LSTCore
+                                                                                                    RooUtil::  _
+                                                                                                    RooUtil:: /\\
+                                                                                                    RooUtil:: \ \\  \__/ \__/
+                                                                                                    RooUtil::  \ \\ (oo) (oo)  Here we come!
+                                                                                                    RooUtil::   \_\\/~~\_/~~\_
+                                                                                                    RooUtil::  _.-~===========~-._
+                                                                                                    RooUtil:: (___________________)
+                                                                                                    RooUtil::       \_______/
+                                                                                                    RooUtil:: 
+                                                                                                    RooUtil::  Your friendly aliens
+                                                                                                    RooUtil::      Surf & Turf
+                                                                                                    RooUtil:: 
+                                                                                                    RooUtil:: Total Events in this Chain to process = 0

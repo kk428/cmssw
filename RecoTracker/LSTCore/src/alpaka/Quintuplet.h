@@ -1845,6 +1845,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
       const auto& lmIdx = triplets.lowerModuleIndices();
       const auto& tripIdx = ranges.tripletModuleIndices();
 
+      // int counter = 0;
+      // int oks = 0;
+
       for (uint16_t lowerModule1 : cms::alpakatools::uniform_groups_z(acc, modules.nLowerModules())) {
         if (!isValidQuintRegion(modules, lowerModule1))
           continue;
@@ -1870,9 +1873,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             const unsigned int thirdMDInner = mdIndices[thirdSegIdx][0];
 
             if (secondMDOuter == thirdMDInner) {
+              // counter = counter+1;
               // Will only perform runQuintupletDefaultAlgorithm() checks if densely connected
               if(nInnerTriplets < n_triplet_threshold && nOuterTriplets < n_triplet_threshold) {
                 const bool ok = true;
+                // oks = oks+1;
                 if (ok) {
                    alpaka::atomicAdd(acc, &triplets.connectedMax()[innerTripletIndex], 1u, alpaka::hierarchy::Threads{});
                 }
@@ -1922,6 +1927,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
           }
         }
       }
+      // if(counter!=0){
+      //   std::cout << "total number of modules: " << counter << std::endl;
+      //   std::cout << "sparse modules: " << oks << std::endl;
+      // }
     }
   };
 
