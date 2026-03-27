@@ -1260,12 +1260,14 @@ void fillEfficiencySet(int isimtrk,
     else
       ana.tx.pushbackToBranch<float>(category_name + "_ie_numer_deltaR", deltaR);
 
-    // vs. genJetPt plot
-    ana.tx.pushbackToBranch<float>(category_name + "_ef_denom_genJetPt", genJetPt);
-    if (pass)
-      ana.tx.pushbackToBranch<float>(category_name + "_ef_numer_genJetPt", genJetPt);
-    else
-      ana.tx.pushbackToBranch<float>(category_name + "_ie_numer_genJetPt", genJetPt);
+    if (deltaR < 0.01) {
+      // vs. genJetPt plot
+      ana.tx.pushbackToBranch<float>(category_name + "_ef_denom_genJetPt", genJetPt);
+      if (pass)
+        ana.tx.pushbackToBranch<float>(category_name + "_ef_numer_genJetPt", genJetPt);
+      else
+        ana.tx.pushbackToBranch<float>(category_name + "_ie_numer_genJetPt", genJetPt);
+    }
   }
 }
 
