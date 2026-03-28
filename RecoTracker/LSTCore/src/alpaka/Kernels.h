@@ -16,6 +16,9 @@
 #include "RecoTracker/LSTCore/interface/TripletsSoA.h"
 #include "RecoTracker/LSTCore/interface/QuadrupletsSoA.h"
 
+
+const float SCALE = 0;
+
 namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   ALPAKA_FN_ACC ALPAKA_FN_INLINE void rmQuintupletFromMemory(Quintuplets quintuplets,
                                                              unsigned int quintupletIndex,
@@ -199,10 +202,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
             float score_rphisum2 = __H2F(quintuplets.score_rphisum()[jx]);
 
-            if (dEta > 0.1f)
+            if (dEta > 0.1f*SCALE)
               continue;
 
-            if (alpaka::math::abs(acc, dPhi) > 0.1f)
+            if (alpaka::math::abs(acc, dPhi) > 0.1f*SCALE)
               continue;
 
             int nMatched = checkHitsT5(ix, jx, quintuplets);
@@ -273,10 +276,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               float dEta = alpaka::math::abs(acc, eta1 - eta2);
               float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
-              if (dEta > 0.1f)
+              if (dEta > 0.1f*SCALE)
                 continue;
 
-              if (alpaka::math::abs(acc, dPhi) > 0.1f)
+              if (alpaka::math::abs(acc, dPhi) > 0.1f*SCALE)
                 continue;
 
               float dR2 = dEta * dEta + dPhi * dPhi;
@@ -290,7 +293,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                 d2 += diff * diff;
               }
 
-              if (((dR2 < 0.001f || nMatched >= minNHitsForDup_T5) && d2 < 1.0f) || (dR2 < 0.02f && d2 < 0.1f)) {
+              if (((dR2 < 0.001f*SCALE || nMatched >= minNHitsForDup_T5) && d2 < 1.0f) || (dR2 < 0.02f*SCALE && d2 < 0.1f)) {
                 if (isPT5_jx || score_rphisum1 > score_rphisum2) {
                   rmQuintupletFromMemory(quintuplets, ix, true);
                 } else if (isPT5_ix || score_rphisum1 < score_rphisum2) {
@@ -330,10 +333,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             float dEta = alpaka::math::abs(acc, eta1 - eta2);
             float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
-            if (dEta > 0.1f)
+            if (dEta > 0.1f*SCALE)
               continue;
 
-            if (alpaka::math::abs(acc, dPhi) > 0.1f)
+            if (alpaka::math::abs(acc, dPhi) > 0.1f*SCALE)
               continue;
 
             const float score2 = quadruplets.displacedScore()[jx] - quadruplets.fakeScore()[jx];
@@ -397,10 +400,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               float dEta = alpaka::math::abs(acc, eta1 - eta2);
               float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
-              if (dEta > 0.1f)
+              if (dEta > 0.1f*SCALE)
                 continue;
 
-              if (alpaka::math::abs(acc, dPhi) > 0.1f)
+              if (alpaka::math::abs(acc, dPhi) > 0.1f*SCALE)
                 continue;
 
               const float score2 = quadruplets.displacedScore()[jx] - quadruplets.fakeScore()[jx];
@@ -408,7 +411,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               float dR2 = dEta * dEta + dPhi * dPhi;
               int nMatched = checkHitsT4(ix, jx, quadruplets);
               const int minNHitsForDup_T4 = 4;
-              if (dR2 < 0.001f || nMatched >= minNHitsForDup_T4) {
+              if (dR2 < 0.001f*SCALE || nMatched >= minNHitsForDup_T4) {
                 if (score1 > score2) {
                   rmQuadrupletFromMemory(quadruplets, jx, true);
                 } else if (score1 < score2) {
@@ -434,7 +437,24 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
           int nMatched[2];
           checkHitspT3(ix, jx, pixelTriplets, nMatched);
           const int minNHitsForDup_pT3 = 5;
-          if ((nMatched[0] + nMatched[1]) >= minNHitsForDup_pT3) {
+          
+          const float eta1 = __H2F(pixelTriplets.eta()[ix]);
+          const float phi1 = __H2F(pixelTriplets.phi()[ix]);
+          const float eta2 = __H2F(pixelTriplets.eta()[jx]);
+          const float phi2 = __H2F(pixelTriplets.phi()[jx]);
+          
+          float dEta = alpaka::math::abs(acc, eta1 - eta2);
+          float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
+          
+          if (dEta > 0.1f*SCALE)
+                continue;
+
+          if (alpaka::math::abs(acc, dPhi) > 0.1f*SCALE)
+                continue;
+                
+          float dR2 = dEta * dEta + dPhi * dPhi;
+          
+          if ((dR2 < 0.001f*SCALE) || ((nMatched[0] + nMatched[1]) >= minNHitsForDup_pT3)) {
             // Check the layers
             if (pixelTriplets.logicalLayers()[jx][2] < pixelTriplets.logicalLayers()[ix][2]) {
               rmPixelTripletFromMemory(pixelTriplets, ix);
@@ -466,7 +486,24 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
           int nMatched = checkHitspT5(ix, jx, pixelQuintuplets);
           float score2 = __H2F(pixelQuintuplets.score()[jx]);
           const int minNHitsForDup_pT5 = 7;
-          if (nMatched >= minNHitsForDup_pT5) {
+
+          const float eta1 = __H2F(pixelQuintuplets.eta()[ix]);
+          const float phi1 = __H2F(pixelQuintuplets.phi()[ix]);
+          const float eta2 = __H2F(pixelQuintuplets.eta()[jx]);
+          const float phi2 = __H2F(pixelQuintuplets.phi()[jx]);
+          
+          float dEta = alpaka::math::abs(acc, eta1 - eta2);
+          float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
+          
+          if (dEta > 0.1f*SCALE)
+                continue;
+
+          if (alpaka::math::abs(acc, dPhi) > 0.1f*SCALE)
+                continue;
+                
+          float dR2 = dEta * dEta + dPhi * dPhi;
+
+          if ((dR2 < 0.001f*SCALE) || (nMatched >= minNHitsForDup_pT5)) {
             if (score1 > score2 or ((score1 == score2) and (ix > jx))) {
               rmPixelQuintupletFromMemory(pixelQuintuplets, ix);
               break;

@@ -23,6 +23,8 @@
 
 #include "NeuralNetwork.h"
 
+const float SCALE2 = 0;
+
 namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   ALPAKA_FN_ACC ALPAKA_FN_INLINE void addpLSTrackCandidateToMemory(TrackCandidatesBase& candsBase,
                                                                    TrackCandidatesExtended& candsExtended,
@@ -277,10 +279,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                 float df = iEmbedT5[k] - quintuplets.t5Embed()[jT5][k];
                 d2 += df * df;
               }
-              if ((dR2 < 0.02f && d2 < 0.1f) || (dR2 < 1e-3f && d2 < 1.0f)) {
+              if ((dR2 < 0.02f*SCALE2 && d2 < 0.1f) || (dR2 < 1e-3f*SCALE2 && d2 < 1.0f)) {
                 quintuplets.isDup()[iT5] = true;
               }
-            } else if (dR2 < 1e-3f) {
+            } else if (dR2 < 1e-3f*SCALE2) {
               quintuplets.isDup()[iT5] = true;
             }
 
@@ -340,7 +342,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
             float dR2 = dEta * dEta + dPhi * dPhi;
             // Cut on pLS-T5 embed distance.
-            if (dR2 < 0.02f) {
+            if (dR2 < 0.02f*SCALE2) {
               float d2 = 0.f;
               CMS_UNROLL_LOOP for (unsigned k = 0; k < Params_pLS::kEmbed; ++k) {
                 const float diff = plsEmbed[k] - quintuplets.t5Embed()[quintupletIndex][k];
@@ -365,7 +367,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
             float dR2 = dEta * dEta + dPhi * dPhi;
-            if (dR2 < 0.000001f)
+            if (dR2 < 0.000001f*SCALE2)
               pixelSegments.isDup()[pixelArrayIndex] = true;
           }
           if (type == LSTObjType::pT5) {
@@ -381,7 +383,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
             float dR2 = dEta * dEta + dPhi * dPhi;
-            if (dR2 < 0.000001f)
+            if (dR2 < 0.000001f*SCALE2)
               pixelSegments.isDup()[pixelArrayIndex] = true;
           }
         }
@@ -445,7 +447,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
               float dR2 = dEta * dEta + dPhi * dPhi;
-              if (dR2 < 1e-3f) {
+              if (dR2 < 1e-3f*SCALE2) {
                 quadruplets.isDup()[iT4] = true;
               }
             }
@@ -471,7 +473,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
               float dR2 = dEta * dEta + dPhi * dPhi;
-              if (dR2 < 1e-3f)
+              if (dR2 < 1e-3f*SCALE2)
                 quadruplets.isDup()[iT4] = true;
             }
             if (type == LSTObjType::pT5) {
@@ -496,7 +498,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
               float dR2 = dEta * dEta + dPhi * dPhi;
-              if (dR2 < 1e-3f) {
+              if (dR2 < 1e-3f*SCALE2) {
                 quadruplets.isDup()[iT4] = true;
               }
             }
