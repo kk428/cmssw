@@ -218,7 +218,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
           float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
           float dR2 = dEta * dEta + dPhi * dPhi;
-          if (dR2 < 1e-5f)
+          if (dR2 < 1e-5f*SCALE2)
             pixelTriplets.isDup()[pixelTripletIndex] = true;
         }
       }
