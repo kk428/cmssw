@@ -107,9 +107,9 @@ def plot(args):
         params["denom"] = "Root__{objecttype}_{metricsuffix}_denom_{variable}".format(**params)
         params["numer"] = "Root__{objecttype}_{metricsuffix}_numer_{variable}".format(**params)
 
-    # print(params["numer"])
-    # print(params["denom"])
-    # print(params["output_name"])
+    print(params["numer"])
+    print(params["denom"])
+    print(params["output_name"])
 
     #skip if histograms not found!
     if (not params["input_file"].GetListOfKeys().Contains(params["numer"])) or \

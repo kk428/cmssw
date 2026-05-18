@@ -23,7 +23,7 @@
 
 #include "NeuralNetwork.h"
 
-const float SCALE2 = 0;
+const float SCALE2 = 1;
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   ALPAKA_FN_ACC ALPAKA_FN_INLINE void addpLSTrackCandidateToMemory(TrackCandidatesBase& candsBase,
@@ -233,64 +233,64 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                   PixelQuintupletsConst pixelQuintuplets,
                                   PixelTripletsConst pixelTriplets,
                                   ObjectRangesConst ranges) const {
-      for (int lowmod : cms::alpakatools::uniform_elements_z(acc, modules.nLowerModules())) {
-        if (ranges.quintupletModuleIndices()[lowmod] == -1)
-          continue;
+      // for (int lowmod : cms::alpakatools::uniform_elements_z(acc, modules.nLowerModules())) {
+      //   if (ranges.quintupletModuleIndices()[lowmod] == -1)
+      //     continue;
 
-        unsigned int nQuints = quintupletsOccupancy.nQuintuplets()[lowmod];
-        for (unsigned int iOff : cms::alpakatools::uniform_elements_y(acc, nQuints)) {
-          unsigned int iT5 = ranges.quintupletModuleIndices()[lowmod] + iOff;
+      //   unsigned int nQuints = quintupletsOccupancy.nQuintuplets()[lowmod];
+      //   for (unsigned int iOff : cms::alpakatools::uniform_elements_y(acc, nQuints)) {
+      //     unsigned int iT5 = ranges.quintupletModuleIndices()[lowmod] + iOff;
 
-          // skip already-dup or already in pT5
-          if (quintuplets.isDup()[iT5] || quintuplets.partOfPT5()[iT5])
-            continue;
+      //     // skip already-dup or already in pT5
+      //     if (quintuplets.isDup()[iT5] || quintuplets.partOfPT5()[iT5])
+      //       continue;
 
-          unsigned int loop_bound = pixelQuintuplets.nPixelQuintuplets() + pixelTriplets.nPixelTriplets();
+      //     unsigned int loop_bound = pixelQuintuplets.nPixelQuintuplets() + pixelTriplets.nPixelTriplets();
 
-          float eta1 = __H2F(quintuplets.eta()[iT5]);
-          float phi1 = __H2F(quintuplets.phi()[iT5]);
+      //     float eta1 = __H2F(quintuplets.eta()[iT5]);
+      //     float phi1 = __H2F(quintuplets.phi()[iT5]);
 
-          float iEmbedT5[Params_T5::kEmbed];
-          CMS_UNROLL_LOOP for (unsigned k = 0; k < Params_T5::kEmbed; ++k) {
-            iEmbedT5[k] = quintuplets.t5Embed()[iT5][k];
-          }
+      //     float iEmbedT5[Params_T5::kEmbed];
+      //     CMS_UNROLL_LOOP for (unsigned k = 0; k < Params_T5::kEmbed; ++k) {
+      //       iEmbedT5[k] = quintuplets.t5Embed()[iT5][k];
+      //     }
 
-          // Cross-clean against both pT5s and pT3s
-          for (unsigned int jx : cms::alpakatools::uniform_elements_x(acc, loop_bound)) {
-            float eta2, phi2;
-            if (jx < pixelQuintuplets.nPixelQuintuplets()) {
-              eta2 = __H2F(pixelQuintuplets.eta()[jx]);
-              phi2 = __H2F(pixelQuintuplets.phi()[jx]);
-            } else {
-              unsigned int ptidx = jx - pixelQuintuplets.nPixelQuintuplets();
-              eta2 = __H2F(pixelTriplets.eta()[ptidx]);
-              phi2 = __H2F(pixelTriplets.phi()[ptidx]);
-            }
+      //     // Cross-clean against both pT5s and pT3s
+      //     for (unsigned int jx : cms::alpakatools::uniform_elements_x(acc, loop_bound)) {
+      //       float eta2, phi2;
+      //       if (jx < pixelQuintuplets.nPixelQuintuplets()) {
+      //         eta2 = __H2F(pixelQuintuplets.eta()[jx]);
+      //         phi2 = __H2F(pixelQuintuplets.phi()[jx]);
+      //       } else {
+      //         unsigned int ptidx = jx - pixelQuintuplets.nPixelQuintuplets();
+      //         eta2 = __H2F(pixelTriplets.eta()[ptidx]);
+      //         phi2 = __H2F(pixelTriplets.phi()[ptidx]);
+      //       }
 
-            float dEta = alpaka::math::abs(acc, eta1 - eta2);
-            float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
-            float dR2 = dEta * dEta + dPhi * dPhi;
+      //       float dEta = alpaka::math::abs(acc, eta1 - eta2);
+      //       float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
+      //       float dR2 = dEta * dEta + dPhi * dPhi;
 
-            if (jx < pixelQuintuplets.nPixelQuintuplets()) {
-              unsigned int jT5 = pixelQuintuplets.quintupletIndices()[jx];
-              float d2 = 0.f;
-              // Compute distance-squared between the two t5 embeddings.
-              CMS_UNROLL_LOOP for (unsigned k = 0; k < Params_T5::kEmbed; ++k) {
-                float df = iEmbedT5[k] - quintuplets.t5Embed()[jT5][k];
-                d2 += df * df;
-              }
-              if ((dR2 < 0.02f*SCALE2 && d2 < 0.1f) || (dR2 < 1e-3f*SCALE2 && d2 < 1.0f)) {
-                quintuplets.isDup()[iT5] = true;
-              }
-            } else if (dR2 < 1e-3f*SCALE2) {
-              quintuplets.isDup()[iT5] = true;
-            }
+      //       if (jx < pixelQuintuplets.nPixelQuintuplets()) {
+      //         unsigned int jT5 = pixelQuintuplets.quintupletIndices()[jx];
+      //         float d2 = 0.f;
+      //         // Compute distance-squared between the two t5 embeddings.
+      //         CMS_UNROLL_LOOP for (unsigned k = 0; k < Params_T5::kEmbed; ++k) {
+      //           float df = iEmbedT5[k] - quintuplets.t5Embed()[jT5][k];
+      //           d2 += df * df;
+      //         }
+      //         if ((dR2 < 0.02f*SCALE2 && d2 < 0.1f) || (dR2 < 1e-3f*SCALE2 && d2 < 1.0f)) {
+      //           quintuplets.isDup()[iT5] = true;
+      //         }
+      //       } else if (dR2 < 1e-3f*SCALE2) {
+      //         quintuplets.isDup()[iT5] = true;
+      //       }
 
-            if (quintuplets.isDup()[iT5])
-              break;
-          }
-        }
-      }
+      //       if (quintuplets.isDup()[iT5])
+      //         break;
+      //     }
+      //   }
+      // }
     }
   };
 

@@ -17,7 +17,7 @@
 #include "RecoTracker/LSTCore/interface/QuadrupletsSoA.h"
 
 
-const float SCALE = 0;
+const float SCALE = 1;
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   ALPAKA_FN_ACC ALPAKA_FN_INLINE void rmQuintupletFromMemory(Quintuplets quintuplets,
@@ -209,7 +209,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               continue;
 
             int nMatched = checkHitsT5(ix, jx, quintuplets);
-            const int minNHitsForDup_T5 = 7;
+            const int minNHitsForDup_T5 = 8;
             if (nMatched >= minNHitsForDup_T5) {
               if (score_rphisum1 >= score_rphisum2) {
                 rmQuintupletFromMemory(quintuplets, ix);
@@ -228,84 +228,84 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                   Quintuplets quintuplets,
                                   QuintupletsOccupancyConst quintupletsOccupancy,
                                   ObjectRangesConst ranges) const {
-      for (unsigned int lowmodIdx1 : cms::alpakatools::uniform_elements_y(acc, ranges.nEligibleT5Modules())) {
-        uint16_t lowmod1 = ranges.indicesOfEligibleT5Modules()[lowmodIdx1];
-        unsigned int nQuintuplets_lowmod1 = quintupletsOccupancy.nQuintuplets()[lowmod1];
-        if (nQuintuplets_lowmod1 == 0)
-          continue;
+      // for (unsigned int lowmodIdx1 : cms::alpakatools::uniform_elements_y(acc, ranges.nEligibleT5Modules())) {
+      //   uint16_t lowmod1 = ranges.indicesOfEligibleT5Modules()[lowmodIdx1];
+      //   unsigned int nQuintuplets_lowmod1 = quintupletsOccupancy.nQuintuplets()[lowmod1];
+      //   if (nQuintuplets_lowmod1 == 0)
+      //     continue;
 
-        unsigned int quintupletModuleIndices_lowmod1 = ranges.quintupletModuleIndices()[lowmod1];
+      //   unsigned int quintupletModuleIndices_lowmod1 = ranges.quintupletModuleIndices()[lowmod1];
 
-        for (unsigned int lowmodIdx2 :
-             cms::alpakatools::uniform_elements_x(acc, lowmodIdx1, ranges.nEligibleT5Modules())) {
-          uint16_t lowmod2 = ranges.indicesOfEligibleT5Modules()[lowmodIdx2];
-          unsigned int nQuintuplets_lowmod2 = quintupletsOccupancy.nQuintuplets()[lowmod2];
-          if (nQuintuplets_lowmod2 == 0)
-            continue;
+      //   for (unsigned int lowmodIdx2 :
+      //        cms::alpakatools::uniform_elements_x(acc, lowmodIdx1, ranges.nEligibleT5Modules())) {
+      //     uint16_t lowmod2 = ranges.indicesOfEligibleT5Modules()[lowmodIdx2];
+      //     unsigned int nQuintuplets_lowmod2 = quintupletsOccupancy.nQuintuplets()[lowmod2];
+      //     if (nQuintuplets_lowmod2 == 0)
+      //       continue;
 
-          unsigned int quintupletModuleIndices_lowmod2 = ranges.quintupletModuleIndices()[lowmod2];
+      //     unsigned int quintupletModuleIndices_lowmod2 = ranges.quintupletModuleIndices()[lowmod2];
 
-          for (unsigned int ix1 = 0; ix1 < nQuintuplets_lowmod1; ix1 += 1) {
-            unsigned int ix = quintupletModuleIndices_lowmod1 + ix1;
-            if (quintuplets.isDup()[ix] & 1)
-              continue;
+      //     for (unsigned int ix1 = 0; ix1 < nQuintuplets_lowmod1; ix1 += 1) {
+      //       unsigned int ix = quintupletModuleIndices_lowmod1 + ix1;
+      //       if (quintuplets.isDup()[ix] & 1)
+      //         continue;
 
-            bool isPT5_ix = quintuplets.partOfPT5()[ix];
+      //       bool isPT5_ix = quintuplets.partOfPT5()[ix];
 
-            for (unsigned int jx1 = 0; jx1 < nQuintuplets_lowmod2; jx1++) {
-              unsigned int jx = quintupletModuleIndices_lowmod2 + jx1;
-              if (ix == jx)
-                continue;
+      //       for (unsigned int jx1 = 0; jx1 < nQuintuplets_lowmod2; jx1++) {
+      //         unsigned int jx = quintupletModuleIndices_lowmod2 + jx1;
+      //         if (ix == jx)
+      //           continue;
 
-              if (quintuplets.isDup()[jx] & 1)
-                continue;
+      //         if (quintuplets.isDup()[jx] & 1)
+      //           continue;
 
-              bool isPT5_jx = quintuplets.partOfPT5()[jx];
+      //         bool isPT5_jx = quintuplets.partOfPT5()[jx];
 
-              if (isPT5_ix && isPT5_jx)
-                continue;
+      //         if (isPT5_ix && isPT5_jx)
+      //           continue;
 
-              float eta1 = __H2F(quintuplets.eta()[ix]);
-              float phi1 = __H2F(quintuplets.phi()[ix]);
-              float score_rphisum1 = __H2F(quintuplets.score_rphisum()[ix]);
+      //         float eta1 = __H2F(quintuplets.eta()[ix]);
+      //         float phi1 = __H2F(quintuplets.phi()[ix]);
+      //         float score_rphisum1 = __H2F(quintuplets.score_rphisum()[ix]);
 
-              float eta2 = __H2F(quintuplets.eta()[jx]);
-              float phi2 = __H2F(quintuplets.phi()[jx]);
-              float score_rphisum2 = __H2F(quintuplets.score_rphisum()[jx]);
+      //         float eta2 = __H2F(quintuplets.eta()[jx]);
+      //         float phi2 = __H2F(quintuplets.phi()[jx]);
+      //         float score_rphisum2 = __H2F(quintuplets.score_rphisum()[jx]);
 
-              float dEta = alpaka::math::abs(acc, eta1 - eta2);
-              float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
+      //         float dEta = alpaka::math::abs(acc, eta1 - eta2);
+      //         float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
-              if (dEta > 0.1f*SCALE)
-                continue;
+      //         if (dEta > 0.1f*SCALE)
+      //           continue;
 
-              if (alpaka::math::abs(acc, dPhi) > 0.1f*SCALE)
-                continue;
+      //         if (alpaka::math::abs(acc, dPhi) > 0.1f*SCALE)
+      //           continue;
 
-              float dR2 = dEta * dEta + dPhi * dPhi;
-              int nMatched = checkHitsT5(ix, jx, quintuplets);
-              const int minNHitsForDup_T5 = 5;
+      //         float dR2 = dEta * dEta + dPhi * dPhi;
+      //         int nMatched = checkHitsT5(ix, jx, quintuplets);
+      //         const int minNHitsForDup_T5 = 5;
 
-              float d2 = 0.f;
-              CMS_UNROLL_LOOP
-              for (unsigned int k = 0; k < Params_T5::kEmbed; ++k) {
-                float diff = quintuplets.t5Embed()[ix][k] - quintuplets.t5Embed()[jx][k];
-                d2 += diff * diff;
-              }
+      //         float d2 = 0.f;
+      //         CMS_UNROLL_LOOP
+      //         for (unsigned int k = 0; k < Params_T5::kEmbed; ++k) {
+      //           float diff = quintuplets.t5Embed()[ix][k] - quintuplets.t5Embed()[jx][k];
+      //           d2 += diff * diff;
+      //         }
 
-              if (((dR2 < 0.001f*SCALE || nMatched >= minNHitsForDup_T5) && d2 < 1.0f) || (dR2 < 0.02f*SCALE && d2 < 0.1f)) {
-                if (isPT5_jx || score_rphisum1 > score_rphisum2) {
-                  rmQuintupletFromMemory(quintuplets, ix, true);
-                } else if (isPT5_ix || score_rphisum1 < score_rphisum2) {
-                  rmQuintupletFromMemory(quintuplets, jx, true);
-                } else {
-                  rmQuintupletFromMemory(quintuplets, (ix < jx ? ix : jx), true);
-                }
-              }
-            }
-          }
-        }
-      }
+      //         if (((dR2 < 0.001f*SCALE || nMatched >= minNHitsForDup_T5) && d2 < 1.0f) || (dR2 < 0.02f*SCALE && d2 < 0.1f)) {
+      //           if (isPT5_jx || score_rphisum1 > score_rphisum2) {
+      //             rmQuintupletFromMemory(quintuplets, ix, true);
+      //           } else if (isPT5_ix || score_rphisum1 < score_rphisum2) {
+      //             rmQuintupletFromMemory(quintuplets, jx, true);
+      //           } else {
+      //             rmQuintupletFromMemory(quintuplets, (ix < jx ? ix : jx), true);
+      //           }
+      //         } 
+      //       }
+      //     }
+      //   }
+      // }
     }
   };
 
