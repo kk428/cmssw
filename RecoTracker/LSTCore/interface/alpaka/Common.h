@@ -91,8 +91,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
       HOST_DEVICE_CONSTANT float kZ_max = 267.2349854f;
       HOST_DEVICE_CONSTANT float kR_max = 110.1099396f;
       HOST_DEVICE_CONSTANT float kWp[kPtBins][kEtaBins] = {
-          {0.4493f, 0.4939f, 0.5715f, 0.6488f, 0.5709f, 0.5938f, 0.7164f, 0.7565f, 0.8103f, 0.8593f},
-          {0.4488f, 0.4448f, 0.5067f, 0.5929f, 0.4836f, 0.4112f, 0.4968f, 0.4403f, 0.5597f, 0.5067f}};
+          {0.8962f, 0.9216f, 0.9314f, 0.9433f, 0.8825f, 0.9059f, 0.9489f, 0.9933f, 0.9983f, 0.9979f},
+          {0.7768f, 0.8003f, 0.8096f, 0.8459f, 0.7082f, 0.5357f, 0.7652f, 0.9098f, 0.9641f, 0.9654f}};
     }  // namespace t5dnn
 
     namespace pt3dnn {
