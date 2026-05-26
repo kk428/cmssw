@@ -743,17 +743,17 @@ void bookEfficiencySet(SimTrackSetDefinition& effset) {
 
   // Moving the standard pT code up here for convenience
   ana.tx.createBranch<std::vector<float>>(category_name + "_ef_denom_pt");
-  ana.histograms.addVecHistogram(category_name + "_ef_denom_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_ef_denom_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_ef_denom_pt");
   });
 
   ana.tx.createBranch<std::vector<float>>(category_name + "_ef_numer_pt");
-  ana.histograms.addVecHistogram(category_name + "_ef_numer_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_ef_numer_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_ef_numer_pt");
   });
 
   ana.tx.createBranch<std::vector<float>>(category_name + "_ie_numer_pt");
-  ana.histograms.addVecHistogram(category_name + "_ie_numer_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_ie_numer_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_ie_numer_pt");
   });
 
@@ -878,7 +878,7 @@ void bookDuplicateRateSet(RecoTrackSetDefinition& DRset) {
   ana.tx.createBranch<std::vector<float>>(category_name + "_dr_numer_deltaR");
 
   // Histogram utility object that is used to define the histograms
-  ana.histograms.addVecHistogram(category_name + "_dr_denom_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_dr_denom_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_dr_denom_pt");
   });
   ana.histograms.addVecHistogram(category_name + "_dr_denom_ptlow", getPtBounds(4), [&, category_name]() {
@@ -896,7 +896,7 @@ void bookDuplicateRateSet(RecoTrackSetDefinition& DRset) {
   ana.histograms.addVecHistogram(category_name + "_dr_denom_deltaR", 50, 0, 0.1, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_dr_denom_deltaR");
   });
-  ana.histograms.addVecHistogram(category_name + "_dr_numer_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_dr_numer_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_dr_numer_pt");
   });
   ana.histograms.addVecHistogram(category_name + "_dr_numer_ptlow", getPtBounds(4), [&, category_name]() {
@@ -940,7 +940,7 @@ void bookFakeOrDuplicateRateSet(RecoTrackSetDefinition& FDRset) {
   ana.tx.createBranch<std::vector<float>>(category_name + "_fdr_numer_deltaR");
 
   // Histogram utility object that is used to define the histograms
-  ana.histograms.addVecHistogram(category_name + "_fdr_denom_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_fdr_denom_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_fdr_denom_pt");
   });
   ana.histograms.addVecHistogram(category_name + "_fdr_denom_ptlow", getPtBounds(4), [&, category_name]() {
@@ -958,7 +958,7 @@ void bookFakeOrDuplicateRateSet(RecoTrackSetDefinition& FDRset) {
   ana.histograms.addVecHistogram(category_name + "_fdr_denom_deltaR", 50, 0, 0.1, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_fdr_denom_deltaR");
   });
-  ana.histograms.addVecHistogram(category_name + "_fdr_numer_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_fdr_numer_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_fdr_numer_pt");
   });
   ana.histograms.addVecHistogram(category_name + "_fdr_numer_ptlow", getPtBounds(4), [&, category_name]() {
@@ -1002,7 +1002,7 @@ void bookFakeRateSet(RecoTrackSetDefinition& FRset) {
   ana.tx.createBranch<std::vector<float>>(category_name + "_fr_numer_deltaR");
 
   // Histogram utility object that is used to define the histograms
-  ana.histograms.addVecHistogram(category_name + "_fr_denom_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_fr_denom_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_fr_denom_pt");
   });
   ana.histograms.addVecHistogram(category_name + "_fr_denom_ptlow", getPtBounds(4), [&, category_name]() {
@@ -1023,7 +1023,7 @@ void bookFakeRateSet(RecoTrackSetDefinition& FRset) {
   ana.histograms.addVecHistogram(category_name + "_fr_numer_phi", 180, -M_PI, M_PI, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_fr_numer_phi");
   });
-  ana.histograms.addVecHistogram(category_name + "_fr_numer_pt", getPtBounds(0), [&, category_name]() {
+  ana.histograms.addVecHistogram(category_name + "_fr_numer_pt", 50, 1, 1000, [&, category_name]() {
     return ana.tx.getBranchLazy<std::vector<float>>(category_name + "_fr_numer_pt");
   });
   ana.histograms.addVecHistogram(category_name + "_fr_numer_ptlow", getPtBounds(4), [&, category_name]() {
