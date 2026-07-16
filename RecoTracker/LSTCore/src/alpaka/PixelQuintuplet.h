@@ -81,8 +81,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
 #ifdef CUT_VALUE_DEBUG
     pixelQuintuplets.rzChiSquared()[pixelQuintupletIndex] = rzChiSquared;
     pixelQuintuplets.rPhiChiSquared()[pixelQuintupletIndex] = rPhiChiSquared;
-    pixelQuintuplets.rPhiChiSquaredInwards()[pixelQuintupletIndex] = rPhiChiSquaredInwards;
 #endif
+    pixelQuintuplets.rPhiChiSquaredInwards()[pixelQuintupletIndex] = rPhiChiSquaredInwards;
   }
 
   ALPAKA_FN_ACC ALPAKA_FN_INLINE bool passPT5RZChiSquaredCuts(ModulesConst modules,
@@ -483,7 +483,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                                                     float& centerX,
                                                                     float& centerY,
                                                                     unsigned int pixelSegmentArrayIndex,
-                                                                    const float ptCut) {
+                                                                    const float ptCut,
+                                                                    bool runPT5DNN = true) {
     unsigned int t5InnerT3Index = quintuplets.tripletIndices()[quintupletIndex][0];
     unsigned int t5OuterT3Index = quintuplets.tripletIndices()[quintupletIndex][1];
 
@@ -509,7 +510,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                                            rPhiChiSquaredInwardsTemp,
                                                            pixelRadiusErrorTemp,
                                                            ptCut,
-                                                           true,
+                                                           runPT5DNN,
                                                            false))
       return false;
 
@@ -646,7 +647,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                   unsigned int* connectedPixelIndex,
                                   unsigned int nPixelSegments,
                                   ObjectRangesConst ranges,
-                                  const float ptCut) const {
+                                  const float ptCut,
+                                  bool runPT5DNN) const {
       for (unsigned int i_pLS : cms::alpakatools::uniform_elements_z(acc, nPixelSegments)) {
         auto iLSModule_max = connectedPixelIndex[i_pLS] + connectedPixelSize[i_pLS];
         for (unsigned int iLSModule :
@@ -675,6 +677,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             if (quintuplets.isDup()[quintupletIndex])
               continue;
 
+            // Mark T5 as attempted in pT5 building regardless of match outcome.
+            // Idempotent write: multiple pLS threads may set this; all write the same value.
+            quintuplets.triedInPT5()[quintupletIndex] = true;
+
             float rzChiSquared, rPhiChiSquared, rPhiChiSquaredInwards, pixelRadius, quintupletRadius, centerX, centerY;
 
             bool success = runPixelQuintupletDefaultAlgo(acc,
@@ -696,7 +702,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                                          centerX,
                                                          centerY,
                                                          static_cast<unsigned int>(i_pLS),
-                                                         ptCut);
+                                                         ptCut,
+                                                         runPT5DNN);
             if (success) {
               unsigned int totOccupancyPixelQuintuplets = alpaka::atomicAdd(
                   acc, &pixelQuintuplets.totOccupancyPixelQuintuplets(), 1u, alpaka::hierarchy::Threads{});

@@ -16,10 +16,10 @@ namespace lst {
                       SOA_COLUMN(Params_pT5::ArrayUxHits, hitIndices),              // hit indices
                       SOA_COLUMN(FPX, pixelRadius),                                 // pLS pt converted
 #ifdef CUT_VALUE_DEBUG
-                      SOA_COLUMN(float, rPhiChiSquared),         // chi2 from pLS to T5
-                      SOA_COLUMN(float, rPhiChiSquaredInwards),  // chi2 from T5 to pLS
+                      SOA_COLUMN(float, rPhiChiSquared),  // chi2 from pLS to T5
                       SOA_COLUMN(float, rzChiSquared),
 #endif
+                      SOA_COLUMN(float, rPhiChiSquaredInwards),  // chi2 from T5 to pLS; used for dedup ranking
                       SOA_COLUMN(FPX, quintupletRadius),  // T5 circle
                       SOA_COLUMN(FPX, eta),
                       SOA_COLUMN(FPX, phi),
