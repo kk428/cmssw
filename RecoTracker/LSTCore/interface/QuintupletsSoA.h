@@ -37,7 +37,8 @@ namespace lst {
                       SOA_COLUMN(float, dBeta1),
                       SOA_COLUMN(float, dBeta2),
 #endif
-                      SOA_COLUMN(bool, partOfPT5));
+                      SOA_COLUMN(bool, partOfPT5),
+                      SOA_COLUMN(bool, triedInPT5));  // attempted in pT5 building (even if matching failed)
 
   using QuintupletsSoA = QuintupletsSoALayout<>;
   using Quintuplets = QuintupletsSoA::View;

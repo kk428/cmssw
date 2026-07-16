@@ -895,7 +895,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
     zLo = z_InUp + (z_InUp - kDeltaZLum) * (rtRatio_OutLoInOut - 1.f) * (z_InUp > 0.f ? 1.f : dzDrtScale) -
           (zpitch_InOut + zpitch_OutLo);  //slope-correction only on outer end
 
-    if ((z_OutLo < zLo) || (z_OutLo > zHi))
+    const float zCenter_raw = 0.5f * (zHi + zLo);
+    const float zHalfW_raw = 0.5f * (zHi - zLo);
+    if ((z_OutLo < zCenter_raw - 4.0f * zHalfW_raw) || (z_OutLo > zCenter_raw + 4.0f * zHalfW_raw))  // loosened 4x
       return false;
 
     const float cosh2Eta = 1.f + (pz * pz) / (ptIn * ptIn);
@@ -918,7 +920,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
     dzErr = alpaka::math::sqrt(acc, dzErr);
 
     const float dzDrIn = pz / ptIn;
-    const float zWindow = dzErr / drt_InSeg * drt_OutLo_InUp + zGeom;
+    const float zWindow = 4.0f * (dzErr / drt_InSeg * drt_OutLo_InUp + zGeom);  // loosened 4x
     const float dzMean = dzDrIn * drt_OutLo_InUp *
                          (1.f + drt_OutLo_InUp * drt_OutLo_InUp * 4 * k2Rinv1GeVf * k2Rinv1GeVf / ptIn / ptIn /
                                     24.f);  // with curved path correction
@@ -930,7 +932,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
       return false;
 
     const float pvOffset = 0.1f / rt_OutLo;
-    dPhiCut = alpha1GeV_OutLo + alpaka::math::sqrt(acc, muls2 + pvOffset * pvOffset);
+    dPhiCut = 4.0f * (alpha1GeV_OutLo + alpaka::math::sqrt(acc, muls2 + pvOffset * pvOffset));  // loosened 4x
 
     //no dphipos cut
     float midPointX = 0.5f * (x_InLo + x_OutLo);
@@ -1068,8 +1070,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
     const float dBetaROut2 = dBetaROut * dBetaROut;
 
     //FIXME: need faster version
-    betaOutCut = alpaka::math::asin(acc, alpaka::math::min(acc, drt_tl_axis * k2Rinv1GeVf / ptCut, kSinAlphaMax)) +
-                 (0.02f / sdOut_d) + alpaka::math::sqrt(acc, dBetaLum2 + dBetaMuls2);
+    betaOutCut =
+        alpaka::math::asin(acc, alpaka::math::min(acc, drt_tl_axis * k2Rinv1GeVf / ptCut, kSinAlphaMax)) +
+        (0.02f / sdOut_d) + alpaka::math::sqrt(acc, dBetaLum2 + dBetaMuls2);
 
     //Cut #6: The real beta cut
     if (alpaka::math::abs(acc, betaOut) >= betaOutCut)
@@ -1155,7 +1158,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
     rtHi = rt_InUp * (1.f + (z_OutLo - z_InUp + zGeom1) / zInForHi) + rtGeom1;
 
     // Cut #2: rt condition
-    if ((rt_OutLo < rtLo) || (rt_OutLo > rtHi))
+    const float rtCenter_raw = 0.5f * (rtHi + rtLo);
+    const float rtHalfW_raw = 0.5f * (rtHi - rtLo);
+    if ((rt_OutLo < rtCenter_raw - 4.0f * rtHalfW_raw) || (rt_OutLo > rtCenter_raw + 4.0f * rtHalfW_raw))  // loosened 4x
       return false;
 
     const float dzOutInAbs = alpaka::math::abs(acc, z_OutLo - z_InUp);
@@ -1175,7 +1180,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
 
     const float drt_OutLo_InUp = (rt_OutLo - rt_InUp);  // drOutIn
 
-    const float rtWindow = drtErr + rtGeom1;
+    const float rtWindow = 4.0f * (drtErr + rtGeom1);  // loosened 4x
     const float drtMean = drtDzIn * dzOutInAbs *
                           (1.f - drt_OutLo_InUp * drt_OutLo_InUp * 4 * k2Rinv1GeVf * k2Rinv1GeVf / ptIn / ptIn /
                                      24.f);  // with curved path correction
@@ -1189,7 +1194,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
     const float alpha1GeV_OutLo =
         alpaka::math::asin(acc, alpaka::math::min(acc, rt_OutLo * k2Rinv1GeVf / ptCut, kSinAlphaMax));
     const float pvOffset = 0.1f / rt_OutLo;
-    dPhiCut = alpha1GeV_OutLo + alpaka::math::sqrt(acc, muls2 + pvOffset * pvOffset);
+    dPhiCut = 4.0f * (alpha1GeV_OutLo + alpaka::math::sqrt(acc, muls2 + pvOffset * pvOffset));  // loosened 4x
 
     float midPointX = 0.5f * (x_InLo + x_OutLo);
     float midPointY = 0.5f * (y_InLo + y_OutLo);
@@ -1323,8 +1328,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
     const float dBetaROut2 = dBetaROut * dBetaROut;
 
     //FIXME: need faster version
-    betaOutCut = alpaka::math::asin(acc, alpaka::math::min(acc, drt_tl_axis * k2Rinv1GeVf / ptCut, kSinAlphaMax)) +
-                 (0.02f / sdOut_d) + alpaka::math::sqrt(acc, dBetaLum2 + dBetaMuls2);
+    betaOutCut =
+        alpaka::math::asin(acc, alpaka::math::min(acc, drt_tl_axis * k2Rinv1GeVf / ptCut, kSinAlphaMax)) +
+        (0.02f / sdOut_d) + alpaka::math::sqrt(acc, dBetaLum2 + dBetaMuls2);
 
     //Cut #6: The real beta cut
     if (alpaka::math::abs(acc, betaOut) >= betaOutCut)

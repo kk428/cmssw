@@ -506,6 +506,11 @@ void createQuintupletBranches() {
   ana.tx->createBranch<std::vector<int>>("t5_t3Idx1");       // index of second T3
   ana.tx->createBranch<std::vector<int>>("t5_isFake");       // 1 if t5 is fake 0 other if not
   ana.tx->createBranch<std::vector<int>>("t5_isDuplicate");  // 1 if t5 is duplicate 0 other if not
+  ana.tx->createBranch<std::vector<int>>("t5_isDupBits");    // reco isDup: bit0=AfterBuild, bit1=BeforeTC-condA, bit2=BeforeTC-condB, bit3=BeforeTC-isPT5priority, bit4=CrossCleanT5
+  ana.tx->createBranch<std::vector<float>>("t5_score");      // FP16-rounded score_rphisum, exactly as compared in the T5 dedup kernels
+  ana.tx->createBranch<std::vector<int>>("t5_tightCutFlag");  // reco tight rzChiSquared+DNN gate for standalone TC promotion
+  ana.tx->createBranch<std::vector<int>>("t5_partOfPT5");     // reco flag: consumed by a successful pT5
+  ana.tx->createBranch<std::vector<int>>("t5_triedInPT5");   // reco flag: attempted in pT5 building (isDup==0 at that point); partOfPT5=false → failed
   ana.tx->createBranch<std::vector<int>>("t5_simIdx");  // idx of best matched (highest nhit and > 75%) simulated track
   // list of idx of all matched (> 0%) simulated track
   ana.tx->createBranch<std::vector<std::vector<int>>>("t5_simIdxAll");
@@ -617,6 +622,16 @@ void createPixelQuintupletBranches() {
   //
 #ifdef CUT_VALUE_DEBUG
   ana.tx->createBranch<std::vector<int>>("pT5_rawIdx");  // raw index in the SoA
+  ana.tx->createBranch<std::vector<float>>("pT5_rzChiSquared");
+  ana.tx->createBranch<std::vector<float>>("pT5_rPhiChiSquared");
+  ana.tx->createBranch<std::vector<float>>("pT5_rPhiChiSquaredInwards");
+  ana.tx->createBranch<std::vector<float>>("pT5_pixelRadius");
+  // T5's 5 lower-module "category" layers, same encoding as passPT5*ChiSquaredCuts in PixelQuintuplet.h
+  ana.tx->createBranch<std::vector<int>>("pT5_catLayer1");
+  ana.tx->createBranch<std::vector<int>>("pT5_catLayer2");
+  ana.tx->createBranch<std::vector<int>>("pT5_catLayer3");
+  ana.tx->createBranch<std::vector<int>>("pT5_catLayer4");
+  ana.tx->createBranch<std::vector<int>>("pT5_catLayer5");
 #endif
   ana.tx->createBranch<std::vector<float>>("pT5_pt");         // pt (taken from the pLS)
   ana.tx->createBranch<std::vector<float>>("pT5_eta");        // eta (taken from the pLS)
@@ -625,6 +640,8 @@ void createPixelQuintupletBranches() {
   ana.tx->createBranch<std::vector<int>>("pT5_t5Idx");        // idx to T5
   ana.tx->createBranch<std::vector<int>>("pT5_isFake");       // 1 if pT5 is fake 0 other if not
   ana.tx->createBranch<std::vector<int>>("pT5_isDuplicate");  // 1 if pT5 is duplicate 0 other if not
+  ana.tx->createBranch<std::vector<int>>("pT5_isDupReco");    // reco isDup flag from RemoveDupPixelQuintupletsFromMap
+  ana.tx->createBranch<std::vector<float>>("pT5_score");      // FP16-rounded dedup score, exactly as compared in RemoveDupPixelQuintupletsFromMap
   ana.tx->createBranch<std::vector<int>>("pT5_simIdx");  // idx of best matched (highest nhit and > 75%) simulated track
   // list of idx of all matched (> 0%) simulated track
   ana.tx->createBranch<std::vector<std::vector<int>>>("pT5_simIdxAll");
@@ -825,12 +842,16 @@ unsigned int setSimTrackContainerBranches(LSTEvent* event) {
         simHitZ.push_back(trk_simhit_z[isimhitidx]);
         simHitDetId.push_back(trk_simhit_detId[isimhitidx]);
 
-        // Also retrieve all the reco-hits matched to this simhit and also aggregate them
-        for (size_t irecohit = 0; irecohit < trk_simhit_hitIdx[isimhitidx].size(); ++irecohit) {
-          recoHitX.push_back(trk_ph2_x[trk_simhit_hitIdx[isimhitidx][irecohit]]);
-          recoHitY.push_back(trk_ph2_y[trk_simhit_hitIdx[isimhitidx][irecohit]]);
-          recoHitZ.push_back(trk_ph2_z[trk_simhit_hitIdx[isimhitidx][irecohit]]);
-          recoHitDetId.push_back(trk_ph2_detId[trk_simhit_hitIdx[isimhitidx][irecohit]]);
+        // Only OT simhits (subdet 4/5) have hitIdx entries that index into ph2_*.
+        // IT (pixel) simhit_hitIdx contains pixel cluster indices; using them against ph2_*
+        // gives garbage positions from an unrelated OT hit.
+        if (subdet == 4 || subdet == 5) {
+          for (size_t irecohit = 0; irecohit < trk_simhit_hitIdx[isimhitidx].size(); ++irecohit) {
+            recoHitX.push_back(trk_ph2_x[trk_simhit_hitIdx[isimhitidx][irecohit]]);
+            recoHitY.push_back(trk_ph2_y[trk_simhit_hitIdx[isimhitidx][irecohit]]);
+            recoHitZ.push_back(trk_ph2_z[trk_simhit_hitIdx[isimhitidx][irecohit]]);
+            recoHitDetId.push_back(trk_ph2_detId[trk_simhit_hitIdx[isimhitidx][irecohit]]);
+          }
         }
 
         // If the given simhit that we are dealing with is not in the outer tracker (i.e. layer == 0. see few lines above.)
@@ -1657,6 +1678,11 @@ std::map<unsigned int, unsigned int> setQuintupletBranches(LSTEvent* event,
         }
       }
       ana.tx->pushbackToBranch<int>("t5_isFake", isfake);
+      ana.tx->pushbackToBranch<int>("t5_isDupBits", static_cast<int>(quintuplets.isDup()[t5Idx]));
+      ana.tx->pushbackToBranch<float>("t5_score", __H2F(quintuplets.score_rphisum()[t5Idx]));
+      ana.tx->pushbackToBranch<int>("t5_tightCutFlag", static_cast<int>(quintuplets.tightCutFlag()[t5Idx]));
+      ana.tx->pushbackToBranch<int>("t5_partOfPT5", static_cast<int>(quintuplets.partOfPT5()[t5Idx]));
+      ana.tx->pushbackToBranch<int>("t5_triedInPT5", static_cast<int>(quintuplets.triedInPT5()[t5Idx]));
       t5_simIdxAll.push_back(simidx);
       t5_simIdxAllFrac.push_back(simidxfrac);
       for (size_t is = 0; is < simidx.size(); ++is) {
@@ -1746,8 +1772,6 @@ std::map<unsigned int, unsigned int> setPixelLineSegmentBranches(
   auto const& trk_see_pt = trk.getVF("see_pt");
   auto const& trk_see_eta = trk.getVF("see_eta");
   auto const& trk_see_phi = trk.getVF("see_phi");
-  auto const& trk_see_hitIdx = trk.getVVI("see_hitIdx");
-  auto const& trk_see_hitType = trk.getVVI("see_hitType");
   auto const& trk_pix_x = trk.getVF("pix_x");
   auto const& trk_pix_y = trk.getVF("pix_y");
   auto const& trk_pix_z = trk.getVF("pix_z");
@@ -1802,10 +1826,14 @@ std::map<unsigned int, unsigned int> setPixelLineSegmentBranches(
     ana.tx->pushbackToBranch<int>("pLS_charge", pixelSeeds.charge()[ipLS]);
     ana.tx->pushbackToBranch<float>("pLS_deltaPhi", pixelSeeds.deltaPhi()[ipLS]);
     ana.tx->pushbackToBranch<int>("pLS_nhit", hit_idx.size());
-    unsigned int seedIdx = pixelSeeds.seedIdx()[ipLS];
-    for (size_t ihit = 0; ihit < trk_see_hitIdx[seedIdx].size() && ihit < lst::Params_pLS::kHits; ++ihit) {
-      int hitidx = trk_see_hitIdx[seedIdx][ihit];
-      bool isPixel = static_cast<HitType>(trk_see_hitType[seedIdx][ihit]) == HitType::Pixel;
+    // Use the built pLS object's own hit_idx/hit_type (above), not a re-lookup into the input
+    // ntuple's see_hitIdx/see_hitType by pixelSeeds.seedIdx() -- that re-lookup assumed seedIdx
+    // always indexes the real input ntuple's seed arrays, which broke (out-of-bounds/wrong-seed
+    // read) for synthetic truth-derived seeds (--idealpls, --fillmissingpls) whose seedIdx can
+    // exceed or simply not correspond to the real see_* arrays' indexing.
+    for (size_t ihit = 0; ihit < hit_idx.size() && ihit < lst::Params_pLS::kHits; ++ihit) {
+      unsigned int hitidx = hit_idx[ihit];
+      bool isPixel = hit_type[ihit] == HitType::Pixel;
       auto const& x = isPixel ? trk_pix_x[hitidx] : trk_ph2_x[hitidx];
       auto const& y = isPixel ? trk_pix_y[hitidx] : trk_ph2_y[hitidx];
       auto const& z = isPixel ? trk_pix_z[hitidx] : trk_ph2_z[hitidx];
@@ -1813,7 +1841,7 @@ std::map<unsigned int, unsigned int> setPixelLineSegmentBranches(
       ana.tx->pushbackToBranch<float>(TString::Format("pLS_hit%zu_y", ihit), y);
       ana.tx->pushbackToBranch<float>(TString::Format("pLS_hit%zu_z", ihit), z);
     }
-    if (trk_see_hitIdx[seedIdx].size() == 3) {
+    if (hit_idx.size() == 3) {
       ana.tx->pushbackToBranch<float>("pLS_hit3_x", -999);
       ana.tx->pushbackToBranch<float>("pLS_hit3_y", -999);
       ana.tx->pushbackToBranch<float>("pLS_hit3_z", -999);
@@ -2129,6 +2157,10 @@ std::map<unsigned int, unsigned int> setPixelQuintupletBranches(LSTEvent* event,
     unsigned int pt5Idx = ipT5;
 #ifdef CUT_VALUE_DEBUG
     ana.tx->pushbackToBranch<int>("pT5_rawIdx", ipT5);
+    ana.tx->pushbackToBranch<float>("pT5_rzChiSquared", pixelQuintuplets.rzChiSquared()[ipT5]);
+    ana.tx->pushbackToBranch<float>("pT5_rPhiChiSquared", pixelQuintuplets.rPhiChiSquared()[ipT5]);
+    ana.tx->pushbackToBranch<float>("pT5_rPhiChiSquaredInwards", pixelQuintuplets.rPhiChiSquaredInwards()[ipT5]);
+    ana.tx->pushbackToBranch<float>("pT5_pixelRadius", __H2F(pixelQuintuplets.pixelRadius()[ipT5]));
 #endif
     pt5_idx_map[pt5Idx] = pt5_idx;
     auto [hit_idx, hit_type] = getHitIdxsAndHitTypesFrompT5(event, ipT5);
@@ -2137,6 +2169,17 @@ std::map<unsigned int, unsigned int> setPixelQuintupletBranches(LSTEvent* event,
     // // Computing line segment pt estimate (assuming beam spot is at zero)
     unsigned int T5Index = getT5FrompT5(event, ipT5);
     unsigned int ipLS = getpLSFrompT5(event, ipT5);
+#ifdef CUT_VALUE_DEBUG
+    // Same "category" layer encoding used by passPT5RZChiSquaredCuts/passPT5RPhiChiSquaredCuts/
+    // passPT5RPhiChiSquaredInwardsCuts in PixelQuintuplet.h, computed offline here so the chi-square
+    // values above can be grouped by category.
+    for (int i = 0; i < 5; ++i) {
+      uint16_t lowerModuleIndex = quintuplets.lowerModuleIndices()[T5Index][i];
+      int catLayer = modules.layers()[lowerModuleIndex] + 6 * (modules.subdets()[lowerModuleIndex] == Endcap) +
+                    5 * (modules.subdets()[lowerModuleIndex] == Endcap and modules.moduleType()[lowerModuleIndex] == TwoS);
+      ana.tx->pushbackToBranch<int>("pT5_catLayer" + std::to_string(i + 1), catLayer);
+    }
+#endif
     float pt = (__H2F(quintuplets.innerRadius()[T5Index]) * k2Rinv1GeVf * 2 + pixelSeeds.ptIn()[ipLS]) / 2;
     float eta = pixelSeeds.eta()[ipLS];
     float phi = pixelSeeds.phi()[ipLS];
@@ -2161,6 +2204,8 @@ std::map<unsigned int, unsigned int> setPixelQuintupletBranches(LSTEvent* event,
       }
     }
     ana.tx->pushbackToBranch<int>("pT5_isFake", isfake);
+    ana.tx->pushbackToBranch<int>("pT5_isDupReco", static_cast<int>(pixelQuintuplets.isDup()[ipT5]));
+    ana.tx->pushbackToBranch<float>("pT5_score", __H2F(pixelQuintuplets.score()[ipT5]));
     pt5_simIdxAll.push_back(simidx);
     pt5_simIdxAllFrac.push_back(simidxfrac);
     for (size_t is = 0; is < simidx.size(); ++is) {

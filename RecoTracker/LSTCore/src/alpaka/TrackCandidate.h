@@ -274,10 +274,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                 d2 += df * df;
               }
               if ((dR2 < 0.02f && d2 < 0.1f) || (dR2 < 1e-3f && d2 < 1.0f)) {
-                quintuplets.isDup()[iT5] = true;
+                quintuplets.isDup()[iT5] |= 0x10;  // bit4 = CrossCleanT5 kill
               }
             } else if (dR2 < 1e-3f) {
-              quintuplets.isDup()[iT5] = true;
+              quintuplets.isDup()[iT5] |= 0x10;  // bit4 = CrossCleanT5 kill
             }
 
             if (quintuplets.isDup()[iT5])

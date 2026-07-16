@@ -975,6 +975,8 @@ void LSTEvent::createQuintuplets() {
     alpaka::memset(queue_, tightCutFlag_view, 0u);
     auto partOfPT5_view = cms::alpakatools::make_device_view(queue_, quintuplets.partOfPT5());
     alpaka::memset(queue_, partOfPT5_view, 0u);
+    auto triedInPT5_view = cms::alpakatools::make_device_view(queue_, quintuplets.triedInPT5());
+    alpaka::memset(queue_, triedInPT5_view, 0u);
   }
 
   auto const createQuintuplets_workDiv =
@@ -1034,7 +1036,7 @@ void LSTEvent::pixelLineSegmentCleaning(bool no_pls_dupclean) {
   }
 }
 
-void LSTEvent::createPixelQuintuplets() {
+void LSTEvent::createPixelQuintuplets(bool runPT5DNN) {
   if (!pixelQuintupletsDC_) {
     pixelQuintupletsDC_.emplace(queue_, n_max_pixel_quintuplets);
     auto nPixelQuintuplets_view =
@@ -1145,7 +1147,8 @@ void LSTEvent::createPixelQuintuplets() {
                       connectedPixelIndex_dev_buf.data(),
                       nInnerSegments,
                       rangesDC_->const_view(),
-                      ptCut_);
+                      ptCut_,
+                      runPT5DNN);
 
   auto const removeDupPixelQuintupletsFromMap_workDiv =
       cms::alpakatools::make_workdiv<Acc2D>({max_blocks, 1}, {16, 16});
