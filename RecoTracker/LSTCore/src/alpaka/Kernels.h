@@ -19,8 +19,8 @@
 namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   ALPAKA_FN_ACC ALPAKA_FN_INLINE void rmQuintupletFromMemory(Quintuplets quintuplets,
                                                              unsigned int quintupletIndex,
-                                                             uint8_t killBits = 0x01u) {
-    quintuplets.isDup()[quintupletIndex] |= killBits;
+                                                             bool secondpass = false) {
+    quintuplets.isDup()[quintupletIndex] |= 1 + secondpass;
   }
 
   ALPAKA_FN_ACC ALPAKA_FN_INLINE void rmPixelTripletFromMemory(PixelTriplets pixelTriplets,
@@ -206,7 +206,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               continue;
 
             int nMatched = checkHitsT5(ix, jx, quintuplets);
-            const int minNHitsForDup_T5 = 8;
+            const int minNHitsForDup_T5 = 7;
             if (nMatched >= minNHitsForDup_T5) {
               if (score_rphisum1 >= score_rphisum2) {
                 rmQuintupletFromMemory(quintuplets, ix);
@@ -286,20 +286,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                 d2 += diff * diff;
               }
 
-              const bool condA = (dR2 < 0.001f || nMatched >= minNHitsForDup_T5) && d2 < 1.0f;
-              const bool condB = dR2 < 0.02f && d2 < 0.1f;
-              if (condA || condB) {
-                // bit1=condA, bit2=condB, bit3=pT5-priority (opponent was pT5 AND score alone wouldn't kill)
-                const uint8_t geoBits = (condA ? 0x02u : 0x00u) | (condB ? 0x04u : 0x00u);
+              if (((dR2 < 0.001f || nMatched >= minNHitsForDup_T5) && d2 < 1.0f) || (dR2 < 0.02f && d2 < 0.1f)) {
                 const float score_rphisum2 = __H2F(quintuplets.score_rphisum()[jx]);
                 if (isPT5_jx || score_rphisum1 > score_rphisum2) {
-                  const bool pT5Decisive = isPT5_jx && !(score_rphisum1 > score_rphisum2);
-                  rmQuintupletFromMemory(quintuplets, ix, geoBits | (pT5Decisive ? 0x08u : 0x00u));
+                  rmQuintupletFromMemory(quintuplets, ix, true);
                 } else if (isPT5_ix || score_rphisum1 < score_rphisum2) {
-                  const bool pT5Decisive = isPT5_ix && !(score_rphisum1 < score_rphisum2);
-                  rmQuintupletFromMemory(quintuplets, jx, geoBits | (pT5Decisive ? 0x08u : 0x00u));
+                  rmQuintupletFromMemory(quintuplets, jx, true);
                 } else {
-                  rmQuintupletFromMemory(quintuplets, (ix < jx ? ix : jx), geoBits);
+                  rmQuintupletFromMemory(quintuplets, (ix < jx ? ix : jx), true);
                 }
               }
             }
@@ -463,7 +457,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
       for (unsigned int ix : cms::alpakatools::uniform_elements_y(acc, nPixelQuintuplets)) {
         float eta1 = __H2F(pixelQuintuplets.eta()[ix]);
         float phi1 = __H2F(pixelQuintuplets.phi()[ix]);
-        float score1 = __H2F(pixelQuintuplets.score()[ix]) + pixelQuintuplets.rPhiChiSquaredInwards()[ix];
+        float score1 = __H2F(pixelQuintuplets.score()[ix]);
         for (unsigned int jx : cms::alpakatools::uniform_elements_x(acc, nPixelQuintuplets)) {
           if (ix == jx)
             continue;
@@ -477,7 +471,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             continue;
 
           int nMatched = checkHitspT5(ix, jx, pixelQuintuplets);
-          float score2 = __H2F(pixelQuintuplets.score()[jx]) + pixelQuintuplets.rPhiChiSquaredInwards()[jx];
+          float score2 = __H2F(pixelQuintuplets.score()[jx]);
           const int minNHitsForDup_pT5 = 7;
           if (nMatched >= minNHitsForDup_pT5) {
             if (score1 > score2 or ((score1 == score2) and (ix > jx))) {
