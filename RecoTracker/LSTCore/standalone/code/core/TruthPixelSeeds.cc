@@ -45,15 +45,15 @@ TruthPixelSeedVectors buildTruthPixelSeeds(std::set<int> const& excludeSimTrkIdx
   auto const& pix_simHitIdx = trk.getVVI("pix_simHitIdx");
   auto const& simhit_simTrkIdx = trk.getVI("simhit_simTrkIdx");
 
-  // Per-seed error values drawn randomly from the real-seed distribution in this event.
+  // Random draw of see_ptErr/see_etaErr from the event's real-seed pool.
   // prepareInput()'s pixtype classification and the pLS DNN embedding both take ptErr/etaErr
   // as features and expect realistic non-zero values.
   auto const& ptErrs = trk.getVF("see_ptErr");
   auto const& etaErrs = trk.getVF("see_etaErr");
 
   std::mt19937 rng(42);
-  std::uniform_int_distribution<size_t> distPtErr(0, ptErrs.empty() ? 0 : ptErrs.size() - 1);
-  std::uniform_int_distribution<size_t> distEtaErr(0, etaErrs.empty() ? 0 : etaErrs.size() - 1);
+  std::uniform_int_distribution<size_t> ptErrDist(0, ptErrs.empty() ? 0 : ptErrs.size() - 1);
+  std::uniform_int_distribution<size_t> etaErrDist(0, etaErrs.empty() ? 0 : etaErrs.size() - 1);
 
   auto simTrkToPixHit = buildSimTrkToPixHitMap(pix_simHitIdx, simhit_simTrkIdx);
 
@@ -103,8 +103,8 @@ TruthPixelSeedVectors buildTruthPixelSeeds(std::set<int> const& excludeSimTrkIdx
 
     out.see_dxy.push_back(sim_pca_dxy[simTrkIdx]);
     out.see_dz.push_back(sim_pca_dz[simTrkIdx]);
-    out.see_ptErr.push_back(ptErrs.empty() ? 0.01f : ptErrs[distPtErr(rng)]);
-    out.see_etaErr.push_back(etaErrs.empty() ? 0.001f : etaErrs[distEtaErr(rng)]);
+    out.see_ptErr.push_back(ptErrs.empty() ? 0.01f : ptErrs[ptErrDist(rng)]);
+    out.see_etaErr.push_back(etaErrs.empty() ? 0.001f : etaErrs[etaErrDist(rng)]);
     out.see_q.push_back(sim_q[simTrkIdx]);
 
     // Outer reference point ("last hit" trajectory state) = the track's own outermost
