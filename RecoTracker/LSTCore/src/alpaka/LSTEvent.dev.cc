@@ -996,9 +996,9 @@ void LSTEvent::createQuintuplets() {
                       nEligibleT5Modules,
                       ptCut_);
 
+#if 0  // AFTERBUILD-DISABLE
   auto const removeDupQuintupletsAfterBuild_workDiv =
       cms::alpakatools::make_workdiv<Acc3D>({max_blocks, 1, 1}, {1, 16, 16});
-
   alpaka::exec<Acc3D>(queue_,
                       removeDupQuintupletsAfterBuild_workDiv,
                       RemoveDupQuintupletsAfterBuild{},
@@ -1006,6 +1006,7 @@ void LSTEvent::createQuintuplets() {
                       quintupletsDC_->view().quintuplets(),
                       quintupletsDC_->const_view().quintupletsOccupancy(),
                       rangesDC_->const_view());
+#endif  // AFTERBUILD-DISABLE
 
   auto const addQuintupletRangesToEventExplicit_workDiv = cms::alpakatools::make_workdiv<Acc1D>(1, 1024);
 
