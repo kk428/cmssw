@@ -175,6 +175,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   };
 
   struct RemoveDupQuintupletsAfterBuild {
+    // Runtime-tunable cut values (set at launch from env vars; defaults = master).
+    float dEtaCut_;
+    float dPhiCut_;
+    int nMatchedCut_;
     ALPAKA_FN_ACC void operator()(Acc3D const& acc,
                                   ModulesConst modules,
                                   Quintuplets quintuplets,
@@ -199,14 +203,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
             float score_rphisum2 = __H2F(quintuplets.score_rphisum()[jx]);
 
-            if (dEta > 0.1f)
+            if (dEta > dEtaCut_)
               continue;
 
-            if (alpaka::math::abs(acc, dPhi) > 0.1f)
+            if (alpaka::math::abs(acc, dPhi) > dPhiCut_)
               continue;
 
             int nMatched = checkHitsT5(ix, jx, quintuplets);
-            const int minNHitsForDup_T5 = 7;
+            const int minNHitsForDup_T5 = nMatchedCut_;
             if (nMatched >= minNHitsForDup_T5) {
               if (score_rphisum1 >= score_rphisum2) {
                 rmQuintupletFromMemory(quintuplets, ix);
@@ -452,6 +456,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   };
 
   struct RemoveDupPixelQuintupletsFromMap {
+    // Runtime-tunable cut values (set at launch from env vars; defaults = master).
+    float dEtaCut_;
+    float dPhiCut_;
+    int nMatchedCut_;
     ALPAKA_FN_ACC void operator()(Acc2D const& acc, PixelQuintuplets pixelQuintuplets) const {
       unsigned int nPixelQuintuplets = pixelQuintuplets.nPixelQuintuplets();
       for (unsigned int ix : cms::alpakatools::uniform_elements_y(acc, nPixelQuintuplets)) {
@@ -463,16 +471,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             continue;
 
           float eta2 = __H2F(pixelQuintuplets.eta()[jx]);
-          if (alpaka::math::abs(acc, eta1 - eta2) > 0.2f)
+          if (alpaka::math::abs(acc, eta1 - eta2) > dEtaCut_)
             continue;
 
           float phi2 = __H2F(pixelQuintuplets.phi()[jx]);
-          if (alpaka::math::abs(acc, cms::alpakatools::deltaPhi(acc, phi1, phi2)) > 0.2f)
+          if (alpaka::math::abs(acc, cms::alpakatools::deltaPhi(acc, phi1, phi2)) > dPhiCut_)
             continue;
 
           int nMatched = checkHitspT5(ix, jx, pixelQuintuplets);
           float score2 = __H2F(pixelQuintuplets.score()[jx]);
-          const int minNHitsForDup_pT5 = 7;
+          const int minNHitsForDup_pT5 = nMatchedCut_;
           if (nMatched >= minNHitsForDup_pT5) {
             if (score1 > score2 or ((score1 == score2) and (ix > jx))) {
               rmPixelQuintupletFromMemory(pixelQuintuplets, ix);

@@ -27,6 +27,8 @@ namespace lst {
                       SOA_COLUMN(FPX, centerX),  // T3-based circle center x
                       SOA_COLUMN(FPX, centerY),  // T3-based circle center y
                       SOA_COLUMN(bool, isDup),
+                      SOA_COLUMN(bool, isDupTiebreaker),   // true when killed by index tiebreaker (score1==score2, ix>jx) rather than score
+                      SOA_COLUMN(bool, passedNMatchedCut), // true if any competitor had nMatched >= 7 (hit-sharing threshold reached)
                       SOA_SCALAR(unsigned int, nPixelQuintuplets),
                       SOA_SCALAR(unsigned int, totOccupancyPixelQuintuplets));
 
