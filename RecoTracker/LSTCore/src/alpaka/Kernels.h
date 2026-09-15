@@ -225,6 +225,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   };
 
   struct RemoveDupQuintupletsBeforeTC {
+    // Runtime-tunable cut values (set at launch from env vars; defaults = master).
+    float dEtaCut_;
+    float dPhiCut_;
+    int nMatchedCut_;
+    float dR2TightCut_;   // "very close" dR² used in first dup branch
+    float dnnD2LooseCut_; // DNN embedding d² limit for first branch
+    float dR2LooseCut_;   // "somewhat close" dR² used in second dup branch
+    float dnnD2TightCut_; // DNN embedding d² limit for second branch
     ALPAKA_FN_ACC void operator()(Acc2D const& acc,
                                   Quintuplets quintuplets,
                                   QuintupletsOccupancyConst quintupletsOccupancy,
@@ -271,17 +279,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
 
               const float eta2 = __H2F(quintuplets.eta()[jx]);
               const float dEta = alpaka::math::abs(acc, eta1 - eta2);
-              if (dEta > 0.1f)
+              if (dEta > dEtaCut_)
                 continue;
 
               const float phi2 = __H2F(quintuplets.phi()[jx]);
               const float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
-              if (alpaka::math::abs(acc, dPhi) > 0.1f)
+              if (alpaka::math::abs(acc, dPhi) > dPhiCut_)
                 continue;
 
               const float dR2 = dEta * dEta + dPhi * dPhi;
               const int nMatched = checkHitsT5(ix, jx, quintuplets);
-              constexpr int minNHitsForDup_T5 = 5;
+              const int minNHitsForDup_T5 = nMatchedCut_;
 
               float d2 = 0.f;
               CMS_UNROLL_LOOP
@@ -290,7 +298,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                 d2 += diff * diff;
               }
 
-              if (((dR2 < 0.001f || nMatched >= minNHitsForDup_T5) && d2 < 1.0f) || (dR2 < 0.02f && d2 < 0.1f)) {
+              if (((dR2 < dR2TightCut_ || nMatched >= minNHitsForDup_T5) && d2 < dnnD2LooseCut_) ||
+                  (dR2 < dR2LooseCut_ && d2 < dnnD2TightCut_)) {
                 const float score_rphisum2 = __H2F(quintuplets.score_rphisum()[jx]);
                 if (isPT5_jx || score_rphisum1 > score_rphisum2) {
                   rmQuintupletFromMemory(quintuplets, ix, true);

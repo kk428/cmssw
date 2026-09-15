@@ -554,9 +554,18 @@ void LSTEvent::createTrackCandidates(bool no_pls_dupclean, bool tc_pls_triplets)
   auto const removeDupQuintupletsBeforeTC_workDiv = cms::alpakatools::make_workdiv<Acc2D>(
       {std::max(nEligibleModules / threadsPerBlockY, 1), std::max(nEligibleModules / threadsPerBlockX, 1)}, {16, 32});
 
+  static const float btcDEtaCut = lstEnvF("LST_BTC_DETA", 0.1f);
+  static const float btcDPhiCut = lstEnvF("LST_BTC_DPHI", 0.1f);
+  static const int btcNMatchedCut = lstEnvI("LST_BTC_NMATCHED", 5);
+  static const float btcDR2TightCut = lstEnvF("LST_BTC_DR2TIGHT", 0.001f);
+  static const float btcDnnD2LooseCut = lstEnvF("LST_BTC_DNND2LOOSE", 1.0f);
+  static const float btcDR2LooseCut = lstEnvF("LST_BTC_DR2LOOSE", 0.02f);
+  static const float btcDnnD2TightCut = lstEnvF("LST_BTC_DNND2TIGHT", 0.1f);
   alpaka::exec<Acc2D>(queue_,
                       removeDupQuintupletsBeforeTC_workDiv,
-                      RemoveDupQuintupletsBeforeTC{},
+                      RemoveDupQuintupletsBeforeTC{btcDEtaCut, btcDPhiCut, btcNMatchedCut,
+                                                   btcDR2TightCut, btcDnnD2LooseCut,
+                                                   btcDR2LooseCut, btcDnnD2TightCut},
                       quintupletsDC_->view().quintuplets(),
                       quintupletsDC_->view().quintupletsOccupancy(),
                       rangesDC_->const_view());
