@@ -649,7 +649,9 @@ void createPixelQuintupletBranches() {
   ana.tx->createBranch<std::vector<int>>("pT5_t5Idx");        // idx to T5
   ana.tx->createBranch<std::vector<int>>("pT5_isFake");       // 1 if pT5 is fake 0 other if not
   ana.tx->createBranch<std::vector<int>>("pT5_isDuplicate");  // 1 if pT5 is duplicate 0 other if not
-  ana.tx->createBranch<std::vector<int>>("pT5_isDupReco");    // reco isDup flag from RemoveDupPixelQuintupletsFromMap
+  ana.tx->createBranch<std::vector<int>>("pT5_isDupReco");          // reco isDup flag from RemoveDupPixelQuintupletsFromMap
+  ana.tx->createBranch<std::vector<int>>("pT5_isDupTiebreaker");    // 1 if killed by index tiebreaker (score equal, higher index loses)
+  ana.tx->createBranch<std::vector<int>>("pT5_passedNMatchedCut"); // 1 if any competitor reached nMatched >= 7 (hit-sharing threshold)
   ana.tx->createBranch<std::vector<float>>("pT5_score");      // FP16-rounded dedup score, exactly as compared in RemoveDupPixelQuintupletsFromMap
   ana.tx->createBranch<std::vector<int>>("pT5_simIdx");  // idx of best matched (highest nhit and > 75%) simulated track
   // list of idx of all matched (> 0%) simulated track
@@ -2237,6 +2239,8 @@ std::map<unsigned int, unsigned int> setPixelQuintupletBranches(LSTEvent* event,
     }
     ana.tx->pushbackToBranch<int>("pT5_isFake", isfake);
     ana.tx->pushbackToBranch<int>("pT5_isDupReco", static_cast<int>(pixelQuintuplets.isDup()[ipT5]));
+    ana.tx->pushbackToBranch<int>("pT5_isDupTiebreaker", static_cast<int>(pixelQuintuplets.isDupTiebreaker()[ipT5]));
+    ana.tx->pushbackToBranch<int>("pT5_passedNMatchedCut", static_cast<int>(pixelQuintuplets.passedNMatchedCut()[ipT5]));
     ana.tx->pushbackToBranch<float>("pT5_score", __H2F(pixelQuintuplets.score()[ipT5]));
     pt5_simIdxAll.push_back(simidx);
     pt5_simIdxAllFrac.push_back(simidxfrac);

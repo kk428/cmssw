@@ -16,6 +16,7 @@
 #include "Quadruplet.h"
 
 #include <format>
+#include <cstdlib>
 
 using Device = ALPAKA_ACCELERATOR_NAMESPACE::Device;
 using Queue = ALPAKA_ACCELERATOR_NAMESPACE::Queue;
@@ -23,6 +24,19 @@ using Acc1D = ALPAKA_ACCELERATOR_NAMESPACE::Acc1D;
 using Acc3D = ALPAKA_ACCELERATOR_NAMESPACE::Acc3D;
 
 using namespace ALPAKA_ACCELERATOR_NAMESPACE::lst;
+
+namespace {
+  // Read a dedup-cut override from the environment (host side, once per process).
+  // Absent env var -> compile-time default (which reproduces the master cut values).
+  inline float lstEnvF(const char* name, float dflt) {
+    const char* s = std::getenv(name);
+    return (s && *s) ? static_cast<float>(std::atof(s)) : dflt;
+  }
+  inline int lstEnvI(const char* name, int dflt) {
+    const char* s = std::getenv(name);
+    return (s && *s) ? std::atoi(s) : dflt;
+  }
+}  // namespace
 
 void LSTEvent::initSync() {
   alpaka::wait(queue_);  // other calls can be asynchronous
@@ -1055,12 +1069,15 @@ void LSTEvent::createQuintuplets() {
                         segmentsDC_->const_view().segments());
   }
 
-#if 0  // AFTERBUILD-DISABLE
+#if 1  // AFTERBUILD-DISABLE (re-enabled for dedup-cut tuning)
+  static const float afterBuildDEtaCut = lstEnvF("LST_AB_DETA", 0.1f);
+  static const float afterBuildDPhiCut = lstEnvF("LST_AB_DPHI", 0.1f);
+  static const int afterBuildNMatchedCut = lstEnvI("LST_AB_NMATCHED", 7);
   auto const removeDupQuintupletsAfterBuild_workDiv =
       cms::alpakatools::make_workdiv<Acc3D>({max_blocks, 1, 1}, {1, 16, 16});
   alpaka::exec<Acc3D>(queue_,
                       removeDupQuintupletsAfterBuild_workDiv,
-                      RemoveDupQuintupletsAfterBuild{},
+                      RemoveDupQuintupletsAfterBuild{afterBuildDEtaCut, afterBuildDPhiCut, afterBuildNMatchedCut},
                       modules_.const_view().modules(),
                       quintupletsDC_->view().quintuplets(),
                       quintupletsDC_->const_view().quintupletsOccupancy(),
@@ -1210,12 +1227,15 @@ void LSTEvent::createPixelQuintuplets(bool runPT5DNN) {
                       ptCut_,
                       runPT5DNN);
 
+  static const float pt5DEtaCut = lstEnvF("LST_PT5_DETA", 0.2f);
+  static const float pt5DPhiCut = lstEnvF("LST_PT5_DPHI", 0.2f);
+  static const int pt5NMatchedCut = lstEnvI("LST_PT5_NMATCHED", 7);
   auto const removeDupPixelQuintupletsFromMap_workDiv =
       cms::alpakatools::make_workdiv<Acc2D>({max_blocks, 1}, {16, 16});
 
   alpaka::exec<Acc2D>(queue_,
                       removeDupPixelQuintupletsFromMap_workDiv,
-                      RemoveDupPixelQuintupletsFromMap{},
+                      RemoveDupPixelQuintupletsFromMap{pt5DEtaCut, pt5DPhiCut, pt5NMatchedCut},
                       pixelQuintupletsDC_->view());
 
 #ifdef WARNINGS
