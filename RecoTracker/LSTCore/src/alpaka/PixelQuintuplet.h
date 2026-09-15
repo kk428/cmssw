@@ -37,6 +37,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
     pixelQuintuplets.pixelSegmentIndices()[pixelQuintupletIndex] = pixelIndex;
     pixelQuintuplets.quintupletIndices()[pixelQuintupletIndex] = t5Index;
     pixelQuintuplets.isDup()[pixelQuintupletIndex] = false;
+    pixelQuintuplets.isDupTiebreaker()[pixelQuintupletIndex] = false;
+    pixelQuintuplets.passedNMatchedCut()[pixelQuintupletIndex] = false;
     pixelQuintuplets.score()[pixelQuintupletIndex] = __F2H(score);
     pixelQuintuplets.eta()[pixelQuintupletIndex] = __F2H(eta);
     pixelQuintuplets.phi()[pixelQuintupletIndex] = __F2H(phi);
