@@ -1272,6 +1272,8 @@ void LSTEvent::createQuadruplets() {
                         tripletsDC_->const_view().tripletsOccupancy(),
                         tripletsDC_->const_view().tripletsBySegment(),
                         tripletsDC_->const_view().tripletsRangesBySegment(),
+                        miniDoubletsDC_->const_view().miniDoubletsOccupancy(),
+                        tripletsDC_->const_view().tripletsRangesByMD(),
                         rangesDC_->const_view(),
                         ptCut_);
   };
@@ -1335,6 +1337,8 @@ void LSTEvent::createQuadruplets() {
                         tripletsDC_->const_view().tripletsOccupancy(),
                         tripletsDC_->const_view().tripletsBySegment(),
                         tripletsDC_->const_view().tripletsRangesBySegment(),
+                        miniDoubletsDC_->const_view().miniDoubletsOccupancy(),
+                        tripletsDC_->const_view().tripletsRangesByMD(),
                         quadrupletsDC_->view().quadruplets(),
                         quadrupletsDC_->view().quadrupletsOccupancy(),
                         rangesDC_->const_view(),
