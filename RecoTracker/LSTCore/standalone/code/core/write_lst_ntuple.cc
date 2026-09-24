@@ -522,9 +522,6 @@ void createQuintupletBranches() {
   ana.tx->createBranch<std::vector<int>>("t5_isFake");       // 1 if t5 is fake 0 other if not
   ana.tx->createBranch<std::vector<int>>("t5_isDuplicate");  // 1 if t5 is duplicate 0 other if not
   ana.tx->createBranch<std::vector<int>>("t5_isDupBits");    // reco isDup: bit0=AfterBuild, bit1=BeforeTC-condA, bit2=BeforeTC-condB, bit3=BeforeTC-isPT5priority, bit4=CrossCleanT5
-  ana.tx->createBranch<std::vector<float>>("t5_score");      // FP16-rounded score_rphisum, exactly as compared in the T5 dedup kernels
-  ana.tx->createBranch<std::vector<int>>("t5_tightCutFlag");  // reco tight rzChiSquared+DNN gate for standalone TC promotion
-  ana.tx->createBranch<std::vector<int>>("t5_partOfPT5");     // reco flag: consumed by a successful pT5
   ana.tx->createBranch<std::vector<int>>("t5_triedInPT5");   // reco flag: attempted in pT5 building (isDup==0 at that point); partOfPT5=false → failed
   ana.tx->createBranch<std::vector<int>>("t5_simIdx");  // idx of best matched (highest nhit and > 75%) simulated track
   // list of idx of all matched (> 0%) simulated track
@@ -1728,9 +1725,6 @@ std::map<unsigned int, unsigned int> setQuintupletBranches(LSTEvent* event,
       }
       ana.tx->pushbackToBranch<int>("t5_isFake", isfake);
       ana.tx->pushbackToBranch<int>("t5_isDupBits", static_cast<int>(quintuplets.isDup()[t5Idx]));
-      ana.tx->pushbackToBranch<float>("t5_score", __H2F(quintuplets.score_rphisum()[t5Idx]));
-      ana.tx->pushbackToBranch<int>("t5_tightCutFlag", static_cast<int>(quintuplets.tightCutFlag()[t5Idx]));
-      ana.tx->pushbackToBranch<int>("t5_partOfPT5", static_cast<int>(quintuplets.partOfPT5()[t5Idx]));
       ana.tx->pushbackToBranch<int>("t5_triedInPT5", static_cast<int>(quintuplets.triedInPT5()[t5Idx]));
       t5_simIdxAll.push_back(simidx);
       t5_simIdxAllFrac.push_back(simidxfrac);
