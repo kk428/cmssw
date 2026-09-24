@@ -589,15 +589,12 @@ void LSTEvent::createTrackCandidates(bool no_pls_dupclean, bool tc_pls_triplets)
   static const float btcDEtaCut = lstEnvF("LST_BTC_DETA", 0.1f);
   static const float btcDPhiCut = lstEnvF("LST_BTC_DPHI", 0.1f);
   static const int btcNMatchedCut = lstEnvI("LST_BTC_NMATCHED", 5);
-  static const float btcDR2TightCut = lstEnvF("LST_BTC_DR2TIGHT", 0.001f);
-  static const float btcDnnD2LooseCut = lstEnvF("LST_BTC_DNND2LOOSE", 1.0f);
-  static const float btcDR2LooseCut = lstEnvF("LST_BTC_DR2LOOSE", 0.02f);
-  static const float btcDnnD2TightCut = lstEnvF("LST_BTC_DNND2TIGHT", 0.1f);
+  static const float btcDnnD2Cut = lstEnvF("LST_BTC_DNND2", 0.25f);
+  static const int btcHardNMatchedCut = lstEnvI("LST_BTC_HARDNMATCHED", 10);
   alpaka::exec<Acc2D>(queue_,
                       removeDupQuintupletsBeforeTC_workDiv,
-                      RemoveDupQuintupletsBeforeTC{btcDEtaCut, btcDPhiCut, btcNMatchedCut,
-                                                   btcDR2TightCut, btcDnnD2LooseCut,
-                                                   btcDR2LooseCut, btcDnnD2TightCut},
+                      RemoveDupQuintupletsBeforeTC{
+                          btcDEtaCut, btcDPhiCut, btcNMatchedCut, btcDnnD2Cut, btcHardNMatchedCut},
                       quintupletsDC_->view().quintuplets(),
                       quintupletsDC_->view().quintupletsOccupancy(),
                       rangesDC_->const_view());
@@ -1080,7 +1077,7 @@ void LSTEvent::createQuintuplets() {
 #if 1  // AFTERBUILD-DISABLE (re-enabled for dedup-cut tuning)
   static const float afterBuildDEtaCut = lstEnvF("LST_AB_DETA", 0.1f);
   static const float afterBuildDPhiCut = lstEnvF("LST_AB_DPHI", 0.1f);
-  static const int afterBuildNMatchedCut = lstEnvI("LST_AB_NMATCHED", 7);
+  static const int afterBuildNMatchedCut = lstEnvI("LST_AB_NMATCHED", 0);  // 0 = master 60%-of-shorter-track rule
   auto const removeDupQuintupletsAfterBuild_workDiv =
       cms::alpakatools::make_workdiv<Acc3D>({max_blocks, 1, 1}, {1, 16, 16});
   alpaka::exec<Acc3D>(queue_,

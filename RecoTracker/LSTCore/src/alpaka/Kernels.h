@@ -187,6 +187,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   };
 
   struct RemoveDupQuintupletsAfterBuild {
+    // Runtime-tunable cut values (set at launch from env vars; defaults = master).
+    float dEtaCut_ = 0.1f;
+    float dPhiCut_ = 0.1f;
+    int nMatchedCut_ = 0;  // > 0: fixed shared-hit threshold; <= 0: master's 60%-of-shorter-track rule
     ALPAKA_FN_ACC void operator()(Acc3D const& acc,
                                   ModulesConst modules,
                                   Quintuplets quintuplets,
@@ -214,10 +218,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             float dEta = alpaka::math::abs(acc, eta1 - eta2);
             float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
 
-            if (dEta > 0.1f)
+            if (dEta > dEtaCut_)
               continue;
 
-            if (alpaka::math::abs(acc, dPhi) > 0.1f)
+            if (alpaka::math::abs(acc, dPhi) > dPhiCut_)
               continue;
 
             int nMatched = checkHitsT5(ix, jx, quintuplets);
@@ -226,7 +230,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             unsigned int nLayersJx = quintuplets.nLayers()[jx];
             unsigned int nHitsIx = 2 * nLayersIx;
             unsigned int nHitsJx = 2 * nLayersJx;
-            int minNHitsForDup = static_cast<int>(0.6f * (nHitsIx < nHitsJx ? nHitsIx : nHitsJx));
+            int minNHitsForDup = nMatchedCut_ > 0 ? nMatchedCut_
+                                                  : static_cast<int>(0.6f * (nHitsIx < nHitsJx ? nHitsIx : nHitsJx));
             if (nMatched >= minNHitsForDup) {
               // Tiebreak: longer track wins; otherwise the higher DNN score.
               if (nLayersIx > nLayersJx) {
@@ -491,6 +496,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   };
 
   struct RemoveDupQuintupletsBeforeTC {
+    // Runtime-tunable cut values (set at launch from env vars; defaults = master).
+    float dEtaCut_ = 0.1f;
+    float dPhiCut_ = 0.1f;
+    int nMatchedCut_ = 5;       // shared hits for the embedding-gated arm
+    float dnnD2Cut_ = 0.25f;    // embedding d² limit for that arm
+    int hardNMatchedCut_ = 10;  // shared hits that make a duplicate regardless of the embedding
     ALPAKA_FN_ACC void operator()(Acc2D const& acc,
                                   Quintuplets quintuplets,
                                   QuintupletsOccupancyConst quintupletsOccupancy,
@@ -537,12 +548,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
 
               const float eta2 = __H2F(quintuplets.eta()[jx]);
               const float dEta = alpaka::math::abs(acc, eta1 - eta2);
-              if (dEta > 0.1f)
+              if (dEta > dEtaCut_)
                 continue;
 
               const float phi2 = __H2F(quintuplets.phi()[jx]);
               const float dPhi = cms::alpakatools::deltaPhi(acc, phi1, phi2);
-              if (alpaka::math::abs(acc, dPhi) > 0.1f)
+              if (alpaka::math::abs(acc, dPhi) > dPhiCut_)
                 continue;
 
               const int nMatched = checkHitsT5(ix, jx, quintuplets);
@@ -555,10 +566,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
               }
 
               // 99th percentile of true-dup d2 distribution measured on 100 PU200 events.
-              constexpr float d2Thresh = 0.25f;
-              constexpr int minNHitsForDup_T5 = 5;
+              const float d2Thresh = dnnD2Cut_;
+              const int minNHitsForDup_T5 = nMatchedCut_;
               // Duplicate regardless of the embedding at this many shared hits.
-              constexpr int nHitsForHardDup_T5 = 10;
+              const int nHitsForHardDup_T5 = hardNMatchedCut_;
               if ((nMatched >= minNHitsForDup_T5 && d2 < d2Thresh) || nMatched >= nHitsForHardDup_T5) {
                 const float dnnScore2 = quintuplets.dnnScore()[jx];
                 const bool ixLoses = (dnnScore1 < dnnScore2) || (dnnScore1 == dnnScore2 && ix < jx);
@@ -722,6 +733,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   };
 
   struct RemoveDupPixelQuintupletsFromMap {
+    // Runtime-tunable cut values (set at launch from env vars; defaults = master).
+    float dEtaCut_ = 0.2f;
+    float dPhiCut_ = 0.2f;
+    int nMatchedCut_ = 7;
     ALPAKA_FN_ACC void operator()(Acc2D const& acc, PixelQuintuplets pixelQuintuplets) const {
       unsigned int nPixelQuintuplets = pixelQuintuplets.nPixelQuintuplets();
       for (unsigned int ix : cms::alpakatools::uniform_elements_y(acc, nPixelQuintuplets)) {
@@ -733,16 +748,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             continue;
 
           float eta2 = __H2F(pixelQuintuplets.eta()[jx]);
-          if (alpaka::math::abs(acc, eta1 - eta2) > 0.2f)
+          if (alpaka::math::abs(acc, eta1 - eta2) > dEtaCut_)
             continue;
 
           float phi2 = __H2F(pixelQuintuplets.phi()[jx]);
-          if (alpaka::math::abs(acc, cms::alpakatools::deltaPhi(acc, phi1, phi2)) > 0.2f)
+          if (alpaka::math::abs(acc, cms::alpakatools::deltaPhi(acc, phi1, phi2)) > dPhiCut_)
             continue;
 
           int nMatched = checkHitspT5(ix, jx, pixelQuintuplets);
           float score2 = __H2F(pixelQuintuplets.score()[jx]);
-          const int minNHitsForDup_pT5 = 7;
+          const int minNHitsForDup_pT5 = nMatchedCut_;
           if (nMatched >= minNHitsForDup_pT5) {
             if (score1 > score2 or ((score1 == score2) and (ix > jx))) {
               rmPixelQuintupletFromMemory(pixelQuintuplets, ix);

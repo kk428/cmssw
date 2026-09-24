@@ -22,6 +22,7 @@ namespace lst {
                       SOA_COLUMN(char, isDup),            // duplicate flag
                       SOA_COLUMN(unsigned int, nLayers),  // number of active layers (5 base)
                       SOA_COLUMN(bool, partOfPT5),
+                      SOA_COLUMN(bool, triedInPT5),  // attempted in pT5 building (even if matching failed)
                       SOA_COLUMN(float, regressionRadius),
                       SOA_COLUMN(float, regressionCenterX),
                       SOA_COLUMN(float, regressionCenterY),
