@@ -42,3 +42,4 @@ movetoweb.sh
 .directoryhash
 performance/
 notebooks/
+*.npz
