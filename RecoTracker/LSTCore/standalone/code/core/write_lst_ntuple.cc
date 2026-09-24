@@ -569,6 +569,7 @@ void createPixelLineSegmentBranches() {
   ana.tx->createBranch<std::vector<float>>("pLS_py");
   ana.tx->createBranch<std::vector<float>>("pLS_pz");
   ana.tx->createBranch<std::vector<bool>>("pLS_isQuad");
+  ana.tx->createBranch<std::vector<int>>("pLS_isDup");  // reco CheckHitspLS bits: bit0 = pre-pT5 pass, bit1 = TC-stage pass
   ana.tx->createBranch<std::vector<int>>("pLS_charge");
   ana.tx->createBranch<std::vector<float>>("pLS_deltaPhi");
 }
@@ -1825,6 +1826,7 @@ std::map<unsigned int, unsigned int> setPixelLineSegmentBranches(
     ana.tx->pushbackToBranch<float>("pLS_py", pixelSeeds.py()[ipLS]);
     ana.tx->pushbackToBranch<float>("pLS_pz", pixelSeeds.pz()[ipLS]);
     ana.tx->pushbackToBranch<bool>("pLS_isQuad", static_cast<bool>(pixelSeeds.isQuad()[ipLS]));
+    ana.tx->pushbackToBranch<int>("pLS_isDup", static_cast<int>(pixelSegments.isDup()[ipLS]));
     ana.tx->pushbackToBranch<int>("pLS_charge", pixelSeeds.charge()[ipLS]);
     ana.tx->pushbackToBranch<float>("pLS_deltaPhi", pixelSeeds.deltaPhi()[ipLS]);
     ana.tx->pushbackToBranch<int>("pLS_nhit", hit_idx.size());

@@ -489,7 +489,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                                                     float& centerY,
                                                                     unsigned int pixelSegmentArrayIndex,
                                                                     const float ptCut,
-                                                                    bool runPT5DNN = true) {
+                                                                    bool runPT5DNN = true,
+                                                                    bool highPtGate = false,
+                                                                    float highPtMinPt = 50.f,
+                                                                    float highPtMaxRes = 0.03f) {
     unsigned int t5InnerT3Index = quintuplets.tripletIndices()[quintupletIndex][0];
     unsigned int t5OuterT3Index = quintuplets.tripletIndices()[quintupletIndex][1];
 
@@ -516,8 +519,44 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                                            pixelRadiusErrorTemp,
                                                            ptCut,
                                                            runPT5DNN,
-                                                           false))
-      return false;
+                                                           false)) {
+      // High-pT fallback: the pixel-seed curvature is unreliable at very high pT, so a pairing that
+      // failed the curvature-based cuts is still accepted if both pixel hits lie within highPtMaxRes
+      // (cm, RMS) of the T5 regression circle and the tracklet pointing cuts pass.
+      if (not highPtGate or pixelData.ptIn < highPtMinPt)
+        return false;
+      const double gT5 = quintuplets.regressionCenterX()[quintupletIndex];
+      const double fT5 = quintuplets.regressionCenterY()[quintupletIndex];
+      const double rT5 = quintuplets.regressionRadius()[quintupletIndex];
+      const double dIn = alpaka::math::sqrt(acc, (pixelData.x_InLo - gT5) * (pixelData.x_InLo - gT5) +
+                                                     (pixelData.y_InLo - fT5) * (pixelData.y_InLo - fT5)) -
+                         rT5;
+      const double dUp = alpaka::math::sqrt(acc, (pixelData.x_InUp - gT5) * (pixelData.x_InUp - gT5) +
+                                                     (pixelData.y_InUp - fT5) * (pixelData.y_InUp - fT5)) -
+                         rT5;
+      if (0.5 * (dIn * dIn + dUp * dUp) > static_cast<double>(highPtMaxRes) * highPtMaxRes)
+        return false;
+      if (not runPixelTripletDefaultAlgo<dnn::pt3dnn::pT5WP>(acc,
+                                                             modules,
+                                                             mds,
+                                                             segments,
+                                                             pixelData,
+                                                             triplets,
+                                                             t5InnerT3Index,
+                                                             pixelRadiusTemp,
+                                                             tripletRadius,
+                                                             centerXTemp,
+                                                             centerYTemp,
+                                                             rzChiSquaredTemp,
+                                                             rPhiChiSquaredTemp,
+                                                             rPhiChiSquaredInwardsTemp,
+                                                             pixelRadiusErrorTemp,
+                                                             ptCut,
+                                                             false,
+                                                             false,
+                                                             true))
+        return false;
+    }
 
     unsigned int firstSegmentIndex = triplets.segmentIndices()[t5InnerT3Index][0];
     unsigned int secondSegmentIndex = triplets.segmentIndices()[t5InnerT3Index][1];
@@ -637,6 +676,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   }
 
   struct CreatePixelQuintupletsFromMap {
+    // Runtime-tunable high-pT pairing fallback (see runPixelQuintupletDefaultAlgo); default off = master.
+    bool highPtGate_ = false;
+    float highPtMinPt_ = 50.f;
+    float highPtMaxRes_ = 0.03f;
+
     ALPAKA_FN_ACC void operator()(Acc3D const& acc,
                                   ModulesConst modules,
                                   ModulesPixelConst modulesPixel,
@@ -708,7 +752,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
                                                          centerY,
                                                          static_cast<unsigned int>(i_pLS),
                                                          ptCut,
-                                                         runPT5DNN);
+                                                         runPT5DNN,
+                                                         highPtGate_,
+                                                         highPtMinPt_,
+                                                         highPtMaxRes_);
             if (success) {
               unsigned int totOccupancyPixelQuintuplets = alpaka::atomicAdd(
                   acc, &pixelQuintuplets.totOccupancyPixelQuintuplets(), 1u, alpaka::hierarchy::Threads{});

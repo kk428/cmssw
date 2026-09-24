@@ -603,10 +603,11 @@ void LSTEvent::createTrackCandidates(bool no_pls_dupclean, bool tc_pls_triplets)
 
   if (!no_pls_dupclean) {
     auto const checkHitspLS_workDiv = cms::alpakatools::make_workdiv<Acc2D>({max_blocks * 4, max_blocks / 4}, {16, 16});
+    static const bool plsDistinctHits = lstEnvI("LST_PLS_DISTINCT_HITS", 0) != 0;
 
     alpaka::exec<Acc2D>(queue_,
                         checkHitspLS_workDiv,
-                        CheckHitspLS{},
+                        CheckHitspLS{plsDistinctHits},
                         modules_.const_view().modules(),
                         segmentsDC_->const_view().segmentsOccupancy(),
                         lstInputDC_->const_view().pixelSeeds(),
@@ -785,15 +786,19 @@ void LSTEvent::createTrackCandidates(bool no_pls_dupclean, bool tc_pls_triplets)
     return;
   auto const wd = cms::alpakatools::make_workdiv<Acc1D>(nTC, 128);
 
-  alpaka::exec<Acc1D>(queue_,
-                      wd,
-                      ExtendTrackCandidatesFromDupT5{},
-                      modules_.const_view().modules(),
-                      rangesDC_->const_view(),
-                      quintupletsDC_->const_view().quintuplets(),
-                      quintupletsDC_->const_view().quintupletsOccupancy(),
-                      trackCandidatesBaseDC_->view(),
-                      trackCandidatesExtendedDC_->view());
+  // LST_EXTEND_DUPT5=0 skips the T5 hit-extension step (default 1 = master behaviour).
+  static const int extendFromDupT5 = lstEnvI("LST_EXTEND_DUPT5", 1);
+  if (extendFromDupT5) {
+    alpaka::exec<Acc1D>(queue_,
+                        wd,
+                        ExtendTrackCandidatesFromDupT5{},
+                        modules_.const_view().modules(),
+                        rangesDC_->const_view(),
+                        quintupletsDC_->const_view().quintuplets(),
+                        quintupletsDC_->const_view().quintupletsOccupancy(),
+                        trackCandidatesBaseDC_->view(),
+                        trackCandidatesExtendedDC_->view());
+  }
 
   // Check if TC buffer was possibly truncated
   auto nTrackCanTotalHost_buf = cms::alpakatools::make_host_buffer<unsigned int>(queue_);
@@ -1051,10 +1056,12 @@ void LSTEvent::createQuintuplets() {
 void LSTEvent::pixelLineSegmentCleaning(bool no_pls_dupclean) {
   if (!no_pls_dupclean) {
     auto const checkHitspLS_workDiv = cms::alpakatools::make_workdiv<Acc2D>({max_blocks * 4, max_blocks / 4}, {16, 16});
+    // LST_PLS_DISTINCT_HITS=1 counts each shared pixel hit once (Fix B); default 0 = master.
+    static const bool plsDistinctHits = lstEnvI("LST_PLS_DISTINCT_HITS", 0) != 0;
 
     alpaka::exec<Acc2D>(queue_,
                         checkHitspLS_workDiv,
-                        CheckHitspLS{},
+                        CheckHitspLS{plsDistinctHits},
                         modules_.const_view().modules(),
                         segmentsDC_->const_view().segmentsOccupancy(),
                         lstInputDC_->const_view().pixelSeeds(),
@@ -1157,9 +1164,13 @@ void LSTEvent::createPixelQuintuplets(bool runPT5DNN) {
   auto const createPixelQuintupletsFromMap_workDiv =
       cms::alpakatools::make_workdiv<Acc3D>({max_blocks, 16, 1}, {16, 1, 16});
 
+  // LST_PT5_HIGHPT_GATE=1 enables the high-pT pairing fallback (Fix A); default 0 = master.
+  static const bool pt5HighPtGate = lstEnvI("LST_PT5_HIGHPT_GATE", 0) != 0;
+  static const float pt5HighPtMinPt = lstEnvF("LST_PT5_HIGHPT_MINPT", 50.f);    // GeV, pLS pT
+  static const float pt5HighPtMaxRes = lstEnvF("LST_PT5_HIGHPT_MAXRES", 0.03f);  // cm, pixel-to-T5-circle RMS
   alpaka::exec<Acc3D>(queue_,
                       createPixelQuintupletsFromMap_workDiv,
-                      CreatePixelQuintupletsFromMap{},
+                      CreatePixelQuintupletsFromMap{pt5HighPtGate, pt5HighPtMinPt, pt5HighPtMaxRes},
                       modules_.const_view().modules(),
                       modules_.const_view().modulesPixel(),
                       miniDoubletsDC_->const_view().miniDoublets(),
@@ -1180,12 +1191,15 @@ void LSTEvent::createPixelQuintuplets(bool runPT5DNN) {
   static const float pt5DEtaCut = lstEnvF("LST_PT5_DETA", 0.2f);
   static const float pt5DPhiCut = lstEnvF("LST_PT5_DPHI", 0.2f);
   static const int pt5NMatchedCut = lstEnvI("LST_PT5_NMATCHED", 7);
+  // LST_PT5_SCORE_MODE=1 ranks pT5 dedup contests by the K5 key (Fix C); default 0 = master.
+  static const int pt5ScoreMode = lstEnvI("LST_PT5_SCORE_MODE", 0);
   auto const removeDupPixelQuintupletsFromMap_workDiv =
       cms::alpakatools::make_workdiv<Acc2D>({max_blocks, 1}, {16, 16});
 
   alpaka::exec<Acc2D>(queue_,
                       removeDupPixelQuintupletsFromMap_workDiv,
-                      RemoveDupPixelQuintupletsFromMap{pt5DEtaCut, pt5DPhiCut, pt5NMatchedCut},
+                      RemoveDupPixelQuintupletsFromMap{pt5DEtaCut, pt5DPhiCut, pt5NMatchedCut, pt5ScoreMode},
+                      quintupletsDC_->const_view().quintuplets(),
                       pixelQuintupletsDC_->view());
 
 #ifdef WARNINGS

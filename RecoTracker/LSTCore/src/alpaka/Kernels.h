@@ -469,12 +469,26 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
     float dEtaCut_;
     float dPhiCut_;
     int nMatchedCut_;
-    ALPAKA_FN_ACC void operator()(Acc2D const& acc, PixelQuintuplets pixelQuintuplets) const {
+    // Ranking key: 0 = master (pT5 score); 1 = K5 = (pT5 score + T5 score_rphisum) / max(T5 dnnScore, 1e-3).
+    int scoreMode_ = 0;
+
+    ALPAKA_FN_ACC float rankKey(QuintupletsConst quintuplets, PixelQuintuplets pixelQuintuplets, unsigned int i) const {
+      float score = __H2F(pixelQuintuplets.score()[i]);
+      if (scoreMode_ != 1)
+        return score;
+      unsigned int t5 = pixelQuintuplets.quintupletIndices()[i];
+      float dnn = quintuplets.dnnScore()[t5];
+      return (score + __H2F(quintuplets.score_rphisum()[t5])) / (dnn > 1e-3f ? dnn : 1e-3f);
+    }
+
+    ALPAKA_FN_ACC void operator()(Acc2D const& acc,
+                                  QuintupletsConst quintuplets,
+                                  PixelQuintuplets pixelQuintuplets) const {
       unsigned int nPixelQuintuplets = pixelQuintuplets.nPixelQuintuplets();
       for (unsigned int ix : cms::alpakatools::uniform_elements_y(acc, nPixelQuintuplets)) {
         float eta1 = __H2F(pixelQuintuplets.eta()[ix]);
         float phi1 = __H2F(pixelQuintuplets.phi()[ix]);
-        float score1 = __H2F(pixelQuintuplets.score()[ix]);
+        float score1 = rankKey(quintuplets, pixelQuintuplets, ix);
         for (unsigned int jx : cms::alpakatools::uniform_elements_x(acc, nPixelQuintuplets)) {
           if (ix == jx)
             continue;
@@ -488,7 +502,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
             continue;
 
           int nMatched = checkHitspT5(ix, jx, pixelQuintuplets);
-          float score2 = __H2F(pixelQuintuplets.score()[jx]);
+          float score2 = rankKey(quintuplets, pixelQuintuplets, jx);
           const int minNHitsForDup_pT5 = nMatchedCut_;
           if (nMatched >= minNHitsForDup_pT5) {
             if (score1 > score2 or ((score1 == score2) and (ix > jx))) {
@@ -502,6 +516,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
   };
 
   struct CheckHitspLS {
+    // true = count each shared pixel hit once (triplet pLS repeat their last hit in slot 3,
+    // which otherwise lets 2 distinct shared hits reach the 3-hit threshold). false = master.
+    bool distinctHits_ = false;
+
     ALPAKA_FN_ACC void operator()(Acc2D const& acc,
                                   ModulesConst modules,
                                   SegmentsOccupancyConst segmentsOccupancy,
@@ -551,6 +569,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE::lst {
 
           int npMatched = 0;
           for (int i = 0; i < Params_pLS::kHits; i++) {
+            if (distinctHits_) {
+              bool repeated = false;
+              for (int k = 0; k < i; k++)
+                repeated |= (phits1[k] == phits1[i]);
+              if (repeated)
+                continue;
+            }
             bool pmatched = false;
             for (int j = 0; j < Params_pLS::kHits; j++) {
               if (phits1[i] == phits2[j]) {
