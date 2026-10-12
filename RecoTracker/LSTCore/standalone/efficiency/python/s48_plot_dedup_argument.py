@@ -4,7 +4,7 @@
 Inputs: plots-files/s48_dedup_thresholds/records.pkl (s48_dedup_threshold_hists.py), the S44 base
 --allobj ntuple (base core TC counts and the core-failure funnel) and efficiency/tune_dedup_log.txt
 (measured oat7 LST runs). Outputs in plots-files/s48_dedup_argument/:
-  tradeoff_core.png            efficiency gained vs junk admitted, all 7 cuts (+ measured oat7 panel)
+  tradeoff_core.png            core efficiency vs junk admitted, all 7 cuts from their defaults
   junk_per_recovered_core.png  junk admitted per recovered track, per cut
   projected_rates_core.png     projected core efficiency / fake rate / duplicate rate vs cut value
   ceiling_core.png             S44 core failures by funnel bucket vs what any dedup loosening recovers
@@ -26,6 +26,7 @@ import uproot
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.ticker
 
 PKL = sys.argv[1] if len(sys.argv) > 1 else 'plots-files/s48_dedup_thresholds/records.pkl'
 NTUP = sys.argv[2] if len(sys.argv) > 2 else 'Ntuple-files/LSTNtuple_s44_base_100evt.root'
@@ -215,83 +216,33 @@ def main():
     junk = lambda n: n['copy'] + n['fake']
 
     # ---------------- Figure 1: trade-off
-    fig, (ax, axm) = plt.subplots(1, 2, figsize=(13, 7), gridspec_kw=dict(width_ratios=[1.35, 1]))
+    fig, ax = plt.subplots(figsize=(8.5, 7))
     xs_all = []
-    btc_max = 0.0
     for p in PARAMS:
-        pts = [(junk(n) / nev, 100 * n['recovered'] / den, g) for g, n, _ in curves[p]]
-        oat = [(junk(n) / nev, 100 * n['recovered'] / den) for g, n, _ in curves[p]
-               if any(np.isclose(g, o) for o in OAT7[p])]
-        x = np.array([a for a, _, _ in pts]); y = np.array([b for _, b, _ in pts])
-        keep = x > 0
-        xs_all += list(x[keep])
-        ax.plot(np.maximum(x, 1e-2), y, color=PCOL[p], linewidth=2, zorder=3)
-        if oat:
-            ax.scatter([max(a, 1e-2) for a, _ in oat], [b for _, b in oat], marker=PMRK[p], s=55, color=PCOL[p],
-                       edgecolor=BG, linewidth=1.5, zorder=4, label=LABEL[p])
-        else:
-            ax.scatter([], [], marker=PMRK[p], s=55, color=PCOL[p], label=LABEL[p])
-        ax.scatter([max(x[-1], 1e-2)], [y[-1]], marker=PMRK[p], s=70, facecolor=BG, edgecolor=PCOL[p],
+        pts = [(junk(n) / nev, 100 * (num0 + n['recovered']) / den, g) for g, n, _ in curves[p]]
+        # start every curve at the default cut (nothing admitted, base efficiency)
+        x = np.array([0.0] + [a for a, _, _ in pts]); y = np.array([100 * eff0] + [b for _, b, _ in pts])
+        xs_all += list(x[x > 0])
+        ax.plot(x, y, color=PCOL[p], linewidth=2, zorder=3)
+        ax.scatter(x[1:-1], y[1:-1], marker=PMRK[p], s=30, color=PCOL[p], edgecolor=BG, linewidth=0.8,
+                   zorder=4, label=LABEL[p])
+        ax.scatter([x[-1]], [y[-1]], marker=PMRK[p], s=70, facecolor=BG, edgecolor=PCOL[p],
                    linewidth=1.8, zorder=4)
-        if not p.startswith('BTC'):
-            ax.annotate(f'{SHORT[p]} fully off: +{y[-1]:.1f} pp\n({x[-1]:,.0f} junk / event)',
-                        (max(x[-1], 1e-2), y[-1]), xytext=(8, 0), textcoords='offset points', fontsize=8,
-                        color=INK, va='center')
-        else:
-            btc_max = max(btc_max, y[-1])
-    ax.set_xscale('log')
-    ytop = max(100 * pts[-1][1]['recovered'] / den for pts in curves.values()) * 1.4
-    ax.set_ylim(0, ytop)
-    ax.annotate(f'5 BeforeTC cuts: ≤ +{btc_max:.1f} pp even fully off', (4, 0.01 * ytop), xytext=(15, 0.05 * ytop),
-                fontsize=8, color=INK, arrowprops=dict(arrowstyle='-', color=INK2, linewidth=0.8))
-    xr = np.geomspace(1e-2, max(xs_all) * 3, 50)
-    ideal = 100 * xr * nev / den
-    ax.plot(xr, ideal, color=INK2, linestyle='--', linewidth=1)
-    iy = 0.85 * ytop
-    ax.annotate('ideal: every admitted object\nrecovers a missed track', (den * iy / 100 / nev, iy), xytext=(-8, 0),
-                textcoords='offset points', ha='right', fontsize=8, color=INK2, rotation=0)
-    ax.set_xlim(1e-2, max(xs_all) * 20)
-    ax.set_xlabel('junk admitted per event (fakes + extra copies of found tracks)')
-    ax.set_ylabel(f'Δ jet-core (ΔR < {CORE:g}) efficiency (pp), base {100 * eff0:.1f}%')
-    ax.set_title('Replay: loosening one dedup cut at a time\n(filled = oat7 scan values, hollow = cut fully off)',
-                 fontsize=10, loc='left')
+    ax.scatter([0], [100 * eff0], marker='*', s=260, color=INK, edgecolor=BG, linewidth=1.2, zorder=6, clip_on=False,
+               label=f'default cuts ({100 * eff0:.1f}%)')
+    # symlog so the default cuts (0 junk admitted) sit on the axis
+    ax.set_xscale('symlog', linthresh=1e-2, linscale=0.4)
+    ax.set_xlim(0, max(xs_all) * 20)
+    ytop = max(100 * (num0 + pts[-1][1]['recovered']) / den for pts in curves.values())
+    ax.set_ylim(min(50, 10 * np.floor((100 * eff0 - 2) / 10)), min(100, ytop + 5))
+    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(decimals=0))
+    ax.set_xlabel('junk admitted per event (fakes + duplicates of found tracks)')
+    ax.set_ylabel(f'Average efficiency for ΔR <{CORE:g}')
+    ax.set_title('Replay: loosening one dedup cut at a time\n(star = default cuts, filled = replay cut values, '
+                 'hollow = cut fully off)', fontsize=10, loc='left')
     ax.grid(True, which='major')
     ax.legend(fontsize=7.5, frameon=False, loc='upper left', bbox_to_anchor=(0.0, -0.13), ncol=2)
-    # measured oat7 (ideal pLS, core010 den 712)
-    rows_m = []
-    for line in open(LOG):
-        if 'stage=oat7' not in line or 'label=' not in line:
-            continue
-        lab = re.search(r'label=(\S+)', line).group(1)
-        kv = dict(re.findall(r'(\w+)=([\d.]+)', line))
-        rows_m.append((lab, int(kv['core010_num']), int(kv['core010_den']), int(kv['n_tc']), int(kv['nevents'])))
-    base = [r for r in rows_m if r[0] == 'base'][0]
-    for p in PARAMS:
-        pts = []
-        for lab, nm, dn, ntc, ne in rows_m:
-            if not lab.startswith(p + '='):
-                continue
-            v = float(lab.split('=')[1])
-            loos = v > DEF[p] if KIND[p] == 'int_up' else v < DEF[p]
-            if loos:
-                pts.append(((ntc - base[3]) / ne, 100 * (nm - base[1]) / dn, v))
-        if not pts:
-            continue
-        pts.sort(key=lambda t: t[0])
-        axm.plot([a for a, _, _ in pts], [b for _, b, _ in pts], color=PCOL[p], marker=PMRK[p], markersize=7,
-                 linewidth=1.5, markeredgecolor=BG)
-        a, b, v = pts[-1]
-        if not p.startswith('BTC'):
-            axm.annotate(f'{SHORT[p]}={v:g}', (a, b), xytext=(5, 4), textcoords='offset points', fontsize=8)
-    axm.annotate('5 BeforeTC cuts: within ±0.3 pp (±2 tracks)', (12, 0.2), xytext=(20, 0.9), fontsize=8,
-                 arrowprops=dict(arrowstyle='-', color=INK2, linewidth=0.8))
-    axm.axhline(0, color=INK2, linewidth=0.8)
-    axm.set_xlabel('Δ track candidates per event')
-    axm.set_ylabel('Δ core efficiency (pp, ΔR < 0.1)')
-    axm.set_title(f'Measured in LST (Sept-15 oat7 scan)\nideal pLS, 100 evt, ΔR<0.1 den {base[2]}; '
-                  f'1 track = {100 / base[2]:.2f} pp', fontsize=10, loc='left')
-    axm.grid(True)
-    fig.suptitle('Loosening dedup cuts buys almost no jet-core efficiency for a large amount of junk',
+    fig.suptitle('Loosening dedup cuts recovers jet-core tracks only by admitting far more junk',
                  x=0.01, ha='left', fontsize=12, fontweight='bold')
     caption(fig)
     fig.tight_layout(rect=(0, 0.04, 1, 0.95))

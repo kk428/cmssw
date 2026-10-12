@@ -1,0 +1,10 @@
+baseline pT5-dedup replay agrees for 21671/21721 pT5s
+found = matched by baseline non-pT5 TC or surviving pT5 (core den 1210, mid 1607, noncore 1633)
+baseline(pT5 rPhiChi2)   core= 674 (  +0)  mid=1350 (  +0)  non=1476 (  +0) | pT5TCs=7455 (+0) fakepT5TCs=1163 (+0)
+T5 score_rphisum         core= 707 ( +33)  mid=1367 ( +17)  non=1477 (  +1) | pT5TCs=7564 (+109) fakepT5TCs=1210 (+47)
+pT5chi2+T5score          core= 691 ( +17)  mid=1360 ( +10)  non=1478 (  +2) | pT5TCs=7451 (-4) fakepT5TCs=1127 (-36)
+1-T5dnn                  core= 669 (  -5)  mid=1346 (  -4)  non=1477 (  +1) | pT5TCs=7620 (+165) fakepT5TCs=1327 (+164)
+pT5chi2/T5dnn            core= 679 (  +5)  mid=1365 ( +15)  non=1479 (  +3) | pT5TCs=7466 (+11) fakepT5TCs=1140 (-23)
+|1/ptpLS-1/ptT5|         core= 636 ( -38)  mid=1315 ( -35)  non=1469 (  -7) | pT5TCs=7636 (+181) fakepT5TCs=1420 (+257)
+pT5chi2*(1-T5dnn)        core= 703 ( +29)  mid=1378 ( +28)  non=1484 (  +8) | pT5TCs=7495 (+40) fakepT5TCs=1123 (-40)
+ORACLE(matched first)    core= 775 (+101)  mid=1402 ( +52)  non=1485 (  +9) | pT5TCs=7465 (+10) fakepT5TCs=968 (-195)

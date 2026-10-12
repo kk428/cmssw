@@ -1,0 +1,12 @@
+== core dR<0.02: failing sims WITH matched T5 = 457
+    213  all matched T5 dup-killed: AfterBuild+BeforeTC(embed)
+    186  T5 used in pT5 but that pT5 not a TC / dup-killed
+     49  all matched T5 dup-killed: AfterBuild
+      8  all matched T5 dup-killed: BeforeTC(embed)
+      1  all matched T5 dup-killed: AfterBuild+BeforeTC(embed)+CrossCleanT5
+== jet dR>=0.1: failing sims WITH matched T5 = 35
+     19  all matched T5 dup-killed: AfterBuild+BeforeTC(embed)
+     13  T5 used in pT5 but that pT5 not a TC / dup-killed
+      1  all matched T5 dup-killed: AfterBuild+BeforeTC(embed)+CrossCleanT5
+      1  all matched T5 dup-killed: BeforeTC(embed)+CrossCleanT5
+      1  all matched T5 dup-killed: AfterBuild

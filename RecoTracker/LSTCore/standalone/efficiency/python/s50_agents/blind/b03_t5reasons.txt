@@ -1,0 +1,51 @@
+== core dR<0.02: lost sims with >=1 matched T5: 457  (matched T5 rows 19238)
+  per-T5 reason combination counts:
+     10320  ['T5dup_AfterBuild']
+      8078  ['T5dup_AfterBuild', 'tightCutFlag']
+       273  ['T5dup_BeforeTC', 'tightCutFlag']
+       210  ['T5dup_BeforeTC']
+       179  ['pT5_wrongpLS']
+       175  ['pT5_dedup']
+         2  ['pT5_inTC_butnotmatched']
+         1  ['CrossCleanT5']
+  sims recoverable if ONLY reason X were removed (some T5 fails solely by X):
+    CrossCleanT5              1
+    T5dup_AfterBuild          411
+    T5dup_BeforeTC            126
+    pT5_dedup                 78
+    pT5_inTC_butnotmatched    2
+    pT5_wrongpLS              112
+    tightCutFlag              0
+  sim-level primary label (T5 with fewest failure reasons):
+      137  T5dup_AfterBuild
+      112  pT5_wrongpLS
+       97  T5dup_BeforeTC
+       72  pT5_dedup
+       32  T5dup_BeforeTC+tightCutFlag
+        5  tightCutFlag+T5dup_AfterBuild
+        2  pT5_inTC_butnotmatched
+== noncore dR>0.1: lost sims with >=1 matched T5: 35  (matched T5 rows 647)
+  per-T5 reason combination counts:
+       390  ['T5dup_AfterBuild']
+       175  ['T5dup_AfterBuild', 'tightCutFlag']
+        37  ['T5dup_BeforeTC']
+        24  ['pT5_dedup']
+        13  ['T5dup_BeforeTC', 'tightCutFlag']
+         5  ['pT5_wrongpLS']
+         1  ['pT5_inTC_butnotmatched']
+         1  ['CrossCleanT5', 'tightCutFlag']
+         1  ['CrossCleanT5']
+  sims recoverable if ONLY reason X were removed (some T5 fails solely by X):
+    CrossCleanT5              1
+    T5dup_AfterBuild          30
+    T5dup_BeforeTC            17
+    pT5_dedup                 10
+    pT5_inTC_butnotmatched    1
+    pT5_wrongpLS              3
+    tightCutFlag              0
+  sim-level primary label (T5 with fewest failure reasons):
+       16  T5dup_BeforeTC
+       10  pT5_dedup
+        3  pT5_wrongpLS
+        3  T5dup_AfterBuild
+        3  T5dup_BeforeTC+tightCutFlag

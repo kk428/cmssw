@@ -36,6 +36,10 @@ parser.add_argument('--pt_cut'      ,        dest='pt_cut'      , type=float    
 parser.add_argument('--eta_cut'     ,        dest='eta_cut'     , type=float          , default=4.5, help='pseudorapidity cut [DEFAULT=4.5]')
 parser.add_argument('--compare'     , '-C' , dest='compare'     , action="store_true" , help='plot comparisons of input files')
 parser.add_argument('--comp_labels' , '-L' , dest='comp_labels' , type=str            , help='comma separated legend labels for comparison plots (e.g. reference,pT5_update')
+parser.add_argument('--colors'      ,        dest='colors'      , type=str            , help='comma separated ROOT color indices per input (default 1,2,3,4,6,7)')
+parser.add_argument('--markers'     ,        dest='markers'     , type=str            , help='comma separated ROOT marker styles per input (default 20,26,28,24,27,25)')
+parser.add_argument('--ratio_panel' ,        dest='ratio_panel' , action="store_true" , help='with --compare: add a pad below each plot with the ratio of every input to the first')
+parser.add_argument('--ratio_title' ,        dest='ratio_title' , type=str            , default="Ratio", help='y-axis title of the ratio pad [DEFAULT=Ratio]')
 parser.add_argument('--jet_branches' , '-j', dest='jet_branches', action="store_true" , help='Accounts for specific jet branches in input root file for testing')
 
 
@@ -277,6 +281,11 @@ def process_arguments_into_params(args):
 
     if args.comp_labels:
         params["comp_labels"] = args.comp_labels.split(",")
+
+    params["colors"] = [int(c) for c in args.colors.split(",")] if args.colors else None
+    params["markers"] = [int(m) for m in args.markers.split(",")] if args.markers else None
+    params["ratio_panel"] = args.ratio_panel
+    params["ratio_title"] = args.ratio_title
 
     # process tags
     tag_ = os.path.normpath(args.tag)
@@ -585,6 +594,57 @@ def draw_label(params):
     t.DrawLatexNDC(x,y,"#scale[1.25]{#font[61]{CMS}} #scale[1.1]{#font[52]{%s}}" % cms_label)
 
 #______________________________________________________________________________________________________
+def draw_ratio_panel(effs, pad, params, colors, markerstyles, markersize, linewidth):
+    """Draw effs[i]/effs[0] (i >= 1) in pad, matching points by x; errors added in quadrature
+    from the symmetrized asymmetric errors. Returns the ROOT objects so they outlive the call."""
+    pad.cd()
+    xaxis = effs[0].GetXaxis()
+    xmin, xmax = xaxis.GetXmin(), xaxis.GetXmax()
+    base = {}
+    for j in range(effs[0].GetN()):
+        y = effs[0].GetY()[j]
+        if y > 0:
+            base[round(effs[0].GetX()[j], 9)] = (y, 0.5 * (effs[0].GetErrorYlow(j) + effs[0].GetErrorYhigh(j)), j)
+    ratios = []
+    ylo, yhi = 1.0, 1.0
+    for eff in effs[1:]:
+        g = r.TGraphAsymmErrors()
+        for j in range(eff.GetN()):
+            x, y = eff.GetX()[j], eff.GetY()[j]
+            key = round(x, 9)
+            if key not in base or y <= 0:
+                continue
+            y0, e0, j0 = base[key]
+            ratio = y / y0
+            err = ratio * ((0.5 * (eff.GetErrorYlow(j) + eff.GetErrorYhigh(j)) / y) ** 2 + (e0 / y0) ** 2) ** 0.5
+            n = g.GetN()
+            g.SetPoint(n, x, ratio)
+            g.SetPointError(n, effs[0].GetErrorXlow(j0), effs[0].GetErrorXhigh(j0), err, err)
+            ylo, yhi = min(ylo, ratio), max(yhi, ratio)
+        ratios.append(g)
+    span = max(yhi - 1.0, 1.0 - ylo, 0.05) * 1.15
+    frame = pad.DrawFrame(xmin, max(0.0, 1.0 - span), xmax, 1.0 + span)
+    frame.GetYaxis().SetTitle(params.get("ratio_title") or "Ratio")
+    frame.GetXaxis().SetTitle(effs[0].GetXaxis().GetTitle())
+    for axis in [frame.GetXaxis(), frame.GetYaxis()]:
+        axis.SetLabelSize(0.11)
+        axis.SetTitleSize(0.12)
+    frame.GetYaxis().SetTitleOffset(0.5)
+    frame.GetYaxis().SetNdivisions(505)
+    frame.GetXaxis().SetTitleOffset(1.1)
+    line = r.TLine(xmin, 1.0, xmax, 1.0)
+    line.SetLineStyle(2)
+    line.Draw()
+    for i, g in enumerate(ratios):
+        g.SetMarkerStyle(markerstyles[i + 1])
+        g.SetMarkerSize(markersize)
+        g.SetMarkerColor(colors[i + 1])
+        g.SetLineColor(colors[i + 1])
+        g.SetLineWidth(linewidth)
+        g.Draw("ep same")
+    return [frame, line] + ratios
+
+
 def draw_plot(effs, nums, dens, params):
 
     legend_labels = params["legend_labels"]
@@ -597,22 +657,42 @@ def draw_plot(effs, nums, dens, params):
 
     # Get Canvas
     ext_legend = "_deltaR" in output_name
-    c1 = r.TCanvas()
+    ratio_panel = params.get("ratio_panel") and len(effs) > 1
+    c1 = r.TCanvas("c1", "", 700, 700) if ratio_panel else r.TCanvas()
     c1.SetBottomMargin(0.15)
     c1.SetLeftMargin(0.15)
     c1.SetTopMargin(0.22)
     c1.SetRightMargin(0.28 if ext_legend else 0.15)
 
+    # With --ratio_panel the main plot goes in an upper pad and the ratios to effs[0] in a lower pad
+    main_pad = c1
+    if ratio_panel:
+        main_pad = r.TPad("main_pad", "", 0, 0.3, 1, 1)
+        ratio_pad = r.TPad("ratio_pad", "", 0, 0, 1, 0.3)
+        for pad in [main_pad, ratio_pad]:
+            pad.SetLeftMargin(0.15)
+            pad.SetRightMargin(0.28 if ext_legend else 0.15)
+            pad.SetGrid()
+            c1.cd()
+            pad.Draw()
+        main_pad.SetTopMargin(0.22 / 0.7)
+        main_pad.SetBottomMargin(0.02)
+        ratio_pad.SetTopMargin(0.04)
+        ratio_pad.SetBottomMargin(0.35)
+        main_pad.cd()
+
     # Set logx
     if "_pt" in output_name:
-        c1.SetLogx()
+        main_pad.SetLogx()
+        if ratio_panel:
+            ratio_pad.SetLogx()
 
     # Set title
     effs[0].SetTitle(parse_plot_name(output_name))
 
     # Draw the efficiency graphs
-    colors = [1, 2, 3, 4, 6, 7]
-    markerstyles = [20, 26, 28, 24, 27, 25]
+    colors = params.get("colors") or [1, 2, 3, 4, 6, 7]
+    markerstyles = params.get("markers") or [20, 26, 28, 24, 27, 25]
     markersize = 1.2
     linewidth = 2
     for i, eff in enumerate(effs):
@@ -678,11 +758,19 @@ def draw_plot(effs, nums, dens, params):
     # Output file path
     output_fullpath = output_dir + "/mtv/var/" + output_name + ".pdf"
 
+    if ratio_panel:
+        effs[0].GetXaxis().SetLabelSize(0)
+        effs[0].GetXaxis().SetTitleSize(0)
+        ratio_keep = draw_ratio_panel(effs, ratio_pad, params, colors, markerstyles, markersize, linewidth)
+
     # Save
     c1.SetGrid()
     c1.SaveAs("{}".format(output_fullpath))
     c1.SaveAs("{}".format(output_fullpath.replace(".pdf", ".png")))
     effs[0].SetName(output_name)
+    if ratio_panel:
+        c1.Clear()
+        c1.cd()
 
     for i, num in enumerate(nums):
         # Extract the Histogram if it's a tuple (sum, sumSq)

@@ -1,0 +1,19 @@
+object-level replay; core den 1210, mid 1607, noncore 1633 (99 events). Deltas vs replay baseline.
+baseline                                                   core= 675 (  +0) mid=1350 (  +0) non=1476 (  +0) | TCs=12275 fakeTCs=2257 (+0) fakerate=0.1839
+A pT5 key = pT5chi2*(1-T5dnn)                              core= 704 ( +29) mid=1378 ( +28) non=1484 (  +8) | TCs=12315 fakeTCs=2217 (-40) fakerate=0.1800
+B tight100 + protect(chi2<3,pt>50)                         core= 717 ( +42) mid=1362 ( +12) non=1480 (  +4) | TCs=12396 fakeTCs=2292 (+35) fakerate=0.1849
+C tight100 + protect(chi2<3,pt>20)                         core= 741 ( +66) mid=1380 ( +30) non=1484 (  +8) | TCs=12616 fakeTCs=2411 (+154) fakerate=0.1911
+A+B                                                        core= 746 ( +71) mid=1390 ( +40) non=1488 ( +12) | TCs=12436 fakeTCs=2252 (-5) fakerate=0.1811
+A+C                                                        core= 770 ( +95) mid=1408 ( +58) non=1492 ( +16) | TCs=12656 fakeTCs=2371 (+114) fakerate=0.1873
+CEIL pT5 dedup oracle                                      core= 776 (+101) mid=1402 ( +52) non=1485 (  +9) | TCs=12285 fakeTCs=2062 (-195) fakerate=0.1678
+CEIL no fake pT5 built (oracle)                            core= 776 (+101) mid=1403 ( +53) non=1485 (  +9) | TCs=11369 fakeTCs=1132 (-1125) fakerate=0.0996
+CEIL no fake pT5 + pT5 oracle + tight100 + no BTC/xclean   core=1048 (+373) mid=1500 (+150) non=1508 ( +32) | TCs=59638 fakeTCs=45043 (+42786) fakerate=0.7553
+even/odd event split (delta vs baseline in each half):
+  A pT5 key = pT5chi2*(1-T5dnn)                              even: core +16 mid +18 fake -43 | odd: core +13 mid +10 fake +3
+  B tight100 + protect(chi2<3,pt>50)                         even: core +19 mid +4 fake +20 | odd: core +23 mid +8 fake +15
+  C tight100 + protect(chi2<3,pt>20)                         even: core +25 mid +12 fake +83 | odd: core +41 mid +18 fake +71
+  A+B                                                        even: core +35 mid +22 fake -23 | odd: core +36 mid +18 fake +18
+  A+C                                                        even: core +41 mid +30 fake +40 | odd: core +54 mid +28 fake +74
+  CEIL pT5 dedup oracle                                      even: core +57 mid +33 fake -117 | odd: core +44 mid +19 fake -78
+  CEIL no fake pT5 built (oracle)                            even: core +57 mid +34 fake -663 | odd: core +44 mid +19 fake -462
+  CEIL no fake pT5 + pT5 oracle + tight100 + no BTC/xclean   even: core +196 mid +74 fake +24646 | odd: core +177 mid +76 fake +18140

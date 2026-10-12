@@ -1,0 +1,22 @@
+== core dR<0.02 AB: lost sims 448, victim T5s 15260, kill rows 534389
+   killer kind: {'fake T5': 315891, 'own-sim T5': 211976, 'other-sim T5': 6522}
+   killer final status: {'killer AB-dup': 520900, 'killer BTC-dup': 7080, 'killer partOfPT5': 6408, 'killer xclean': 1}
+   per-sim AB killer kinds: {'mixed': 400, 'own': 45, 'only other/fake': 3}
+   nShared dist {7: 348971, 8: 142345, 9: 43073}
+== core dR<0.02 BTC: lost sims 288, victim T5s 478, kill rows 22276
+   killer kind: {'fake T5': 14570, 'other-sim T5': 7346, 'own-sim T5': 360}
+   killer final status: {'killer partOfPT5': 15022, 'killer BTC-dup': 7248, 'killer -> T5 TC': 3, 'killer !tight': 2, 'killer xclean': 1}
+   BTC branch: dR2<1e-3: 22132  nShared>=5: 557  d2emb<0.1: 4109  killer pof (pT5-priority): 15022
+   d2emb quantiles [0.058, 0.299, 0.782]  nShared dist {0: 15896, 1: 1689, 2: 3369, 3: 353, 4: 412, 5: 142, 6: 140, 7: 75, 8: 200}
+   per-sim BTC killer kinds: {'mixed': 194, 'only other/fake': 93, 'own': 1}
+== noncore dR>0.1 AB: lost sims 33, victim T5s 560, kill rows 6912
+   killer kind: {'own-sim T5': 4128, 'fake T5': 2706, 'other-sim T5': 78}
+   killer final status: {'killer AB-dup': 6416, 'killer BTC-dup': 266, 'killer partOfPT5': 229, 'killer xclean': 1}
+   per-sim AB killer kinds: {'mixed': 18, 'own': 15}
+   nShared dist {7: 3581, 8: 2320, 9: 1011}
+== noncore dR>0.1 BTC: lost sims 24, victim T5s 50, kill rows 471
+   killer kind: {'other-sim T5': 302, 'fake T5': 118, 'own-sim T5': 51}
+   killer final status: {'killer partOfPT5': 307, 'killer BTC-dup': 154, 'killer -> T5 TC': 8, 'killer xclean': 2}
+   BTC branch: dR2<1e-3: 468  nShared>=5: 47  d2emb<0.1: 103  killer pof (pT5-priority): 307
+   d2emb quantiles [0.044, 0.261, 0.718]  nShared dist {0: 339, 1: 14, 2: 43, 3: 6, 4: 22, 5: 1, 6: 14, 7: 5, 8: 27}
+   per-sim BTC killer kinds: {'mixed': 19, 'only other/fake': 4, 'own': 1}

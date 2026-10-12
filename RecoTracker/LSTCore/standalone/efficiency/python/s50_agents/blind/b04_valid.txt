@@ -1,0 +1,1 @@
+AfterBuild replay agrees with reco bit0 for 66534/66534 sim-matched T5s; BeforeTC replay agrees with bit1 for 1177/1185 (non-AB-dup, non-partOfPT5) sim-matched T5s (fp 8, fn 0). partOfPT5 T5s can carry bit1 from the asymmetric pT5 branch but that does not affect TCs.

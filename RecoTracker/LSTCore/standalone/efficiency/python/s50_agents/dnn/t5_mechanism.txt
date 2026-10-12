@@ -1,0 +1,51 @@
+Per-pair T5 DNN pass rate by region x sim-pT x hit purity (frac=1.0 vs <1.0)
+ pt[5,20) core    : all 0.911 (N= 1579) | pure 0.942 (N=  605) | 8-9/10 hits 0.891 (N=  974) | frac-impure 0.62
+ pt[5,20) dR>=0.1 : all 0.897 (N= 2264) | pure 0.956 (N= 1499) | 8-9/10 hits 0.780 (N=  765) | frac-impure 0.34
+ pt[20,100) core    : all 0.680 (N= 9734) | pure 0.820 (N= 1490) | 8-9/10 hits 0.655 (N= 8244) | frac-impure 0.85
+ pt[20,100) dR>=0.1 : all 0.823 (N= 1370) | pure 0.920 (N=  527) | 8-9/10 hits 0.763 (N=  843) | frac-impure 0.62
+ pt[100,1000000000.0) core    : all 0.406 (N=10092) | pure 0.488 (N=  890) | 8-9/10 hits 0.399 (N= 9202) | frac-impure 0.91
+ pt[100,1000000000.0) dR>=0.1 : all 0.634 (N=  363) | pure 0.747 (N=   79) | 8-9/10 hits 0.602 (N=  284) | frac-impure 0.78
+
+Median (score - WP) for pure pairs:
+ pt[20,100) core: median margin +0.346, pass 0.820, N=1490
+ pt[20,100) dR>=0.1: median margin +0.388, pass 0.920, N=527
+ pt[100,1000000000.0) core: median margin -0.022, pass 0.488, N=890
+ pt[100,1000000000.0) dR>=0.1: median margin +0.194, pass 0.747, N=79
+
+Feature shift core vs dR>=0.1 (pure pairs, simpt>=20; N=2380, 606):
+   log10Rin     SMD=+0.54  core mean +3.8265  noncore mean +3.5847
+   log10Rbridge SMD=+0.51  core mean +3.8010  noncore mean +3.5635
+   log10Rout    SMD=+0.46  core mean +3.7787  noncore mean +3.5412
+   dz43         SMD=-0.38  core mean +0.0325  noncore mean +0.0432
+   dz32         SMD=-0.37  core mean +0.0308  noncore mean +0.0409
+   dz21         SMD=-0.36  core mean +0.0262  noncore mean +0.0350
+   deta21       SMD=-0.35  core mean -0.0064  noncore mean +0.0089
+   dz54         SMD=-0.35  core mean +0.0367  noncore mean +0.0474
+
+Pure pairs pass rate by |eta| bin (simpt>=20):
+   eta[0,0.5) core     pass 0.672 N=1288
+   eta[0,0.5) dR>=0.1  pass 0.898 N=284
+   eta[0.5,1.0) core     pass 0.720 N=892
+   eta[0.5,1.0) dR>=0.1  pass 0.879 N=206
+   eta[1.0,1.5) core     pass 0.698 N=159
+   eta[1.0,1.5) dR>=0.1  pass 0.918 N=98
+   eta[1.5,2.0) core     pass 0.927 N=41
+   eta[1.5,2.0) dR>=0.1  pass 1.000 N=18
+   eta[2.0,2.5) core     pass nan N=0
+   eta[2.0,2.5) dR>=0.1  pass nan N=0
+   eta[2.5,3.0) core     pass nan N=0
+   eta[2.5,3.0) dR>=0.1  pass nan N=0
+
+Pure pairs, all regions: pass rate vs reco T5 pt (inner radius):
+   recoPt[5,10) core     pass 0.913 N=265
+   recoPt[5,10) dR>=0.1  pass 0.945 N=932
+   recoPt[10,20) core     pass 0.901 N=374
+   recoPt[10,20) dR>=0.1  pass 0.964 N=586
+   recoPt[20,50) core     pass 0.820 N=835
+   recoPt[20,50) dR>=0.1  pass 0.932 N=384
+   recoPt[50,100) core     pass 0.709 N=704
+   recoPt[50,100) dR>=0.1  pass 0.887 N=142
+   recoPt[100,300) core     pass 0.601 N=601
+   recoPt[100,300) dR>=0.1  pass 0.764 N=55
+   recoPt[300,1000000000.0) core     pass 0.521 N=188
+   recoPt[300,1000000000.0) dR>=0.1  pass 0.643 N=14

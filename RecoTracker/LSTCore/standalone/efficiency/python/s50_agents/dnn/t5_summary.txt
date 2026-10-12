@@ -1,0 +1,61 @@
+pairs total 61945  exist&fail-DNN (should be ~0): 0  exist: 44633
+
+=== core dR<0.02: den=1210 eff=0.5380 failures=559
+  fail & has matched T5 in ntuple            : 457
+  fail & no T5, cand pairs, ALL fail T5 DNN   : 8
+  fail & no T5, cand pair passes DNN (killed later): 2
+  fail & no T5, no good cand pair             : 92
+     of which n_good_t3(>0.75)==0            : 69; n_good_ls==0: 29
+  [success sims] no T5 & all cand fail DNN    : 3 / 651
+  sims w/ cand: 1095;  all-cand-fail-DNN frac = 0.0210
+  per-pair DNN pass rate: 0.5706 (N=21527);  exists|pass: 0.9061
+    pt[0.8,2): den=    5 eff=0.400  sims-with-cand all-fail frac=0.0000 (n=1)  pair pass=1.0000 (N=6)
+    pt[2,5): den=   28 eff=0.964  sims-with-cand all-fail frac=0.0000 (n=25)  pair pass=1.0000 (N=116)
+    pt[5,20): den=  166 eff=0.819  sims-with-cand all-fail frac=0.0000 (n=156)  pair pass=0.9107 (N=1579)
+    pt[20,100): den=  567 eff=0.642  sims-with-cand all-fail frac=0.0039 (n=518)  pair pass=0.6804 (N=9734)
+    pt[100,1000000000.0): den=  444 eff=0.275  sims-with-cand all-fail frac=0.0532 (n=395)  pair pass=0.4064 (N=10092)
+
+=== jet dR>=0.1: den=1633 eff=0.9032 failures=158
+  fail & has matched T5 in ntuple            : 35
+  fail & no T5, cand pairs, ALL fail T5 DNN   : 1
+  fail & no T5, cand pair passes DNN (killed later): 0
+  fail & no T5, no good cand pair             : 122
+     of which n_good_t3(>0.75)==0            : 102; n_good_ls==0: 53
+  [success sims] no T5 & all cand fail DNN    : 5 / 1475
+  sims w/ cand: 1284;  all-cand-fail-DNN frac = 0.0047
+  per-pair DNN pass rate: 0.8912 (N=7538);  exists|pass: 0.9619
+    pt[0.8,2): den=  585 eff=0.899  sims-with-cand all-fail frac=0.0050 (n=399)  pair pass=0.9579 (N=1807)
+    pt[2,5): den=  430 eff=0.919  sims-with-cand all-fail frac=0.0058 (n=342)  pair pass=0.9221 (N=1734)
+    pt[5,20): den=  441 eff=0.923  sims-with-cand all-fail frac=0.0026 (n=382)  pair pass=0.8966 (N=2264)
+    pt[20,100): den=  155 eff=0.858  sims-with-cand all-fail frac=0.0072 (n=139)  pair pass=0.8234 (N=1370)
+    pt[100,1000000000.0): den=   22 eff=0.636  sims-with-cand all-fail frac=0.0000 (n=22)  pair pass=0.6336 (N=363)
+
+=== jet all: den=4450 eff=0.7798 failures=980
+  fail & has matched T5 in ntuple            : 654
+  fail & no T5, cand pairs, ALL fail T5 DNN   : 16
+  fail & no T5, cand pair passes DNN (killed later): 2
+  fail & no T5, no good cand pair             : 308
+     of which n_good_t3(>0.75)==0            : 250; n_good_ls==0: 112
+  [success sims] no T5 & all cand fail DNN    : 9 / 3470
+  sims w/ cand: 3819;  all-cand-fail-DNN frac = 0.0107
+  per-pair DNN pass rate: 0.6991 (N=44577);  exists|pass: 0.9192
+    pt[0.8,2): den=  669 eff=0.900  sims-with-cand all-fail frac=0.0043 (n=460)  pair pass=0.9602 (N=2085)
+    pt[2,5): den=  696 eff=0.921  sims-with-cand all-fail frac=0.0035 (n=575)  pair pass=0.9144 (N=3119)
+    pt[5,20): den= 1300 eff=0.884  sims-with-cand all-fail frac=0.0009 (n=1169)  pair pass=0.8978 (N=9837)
+    pt[20,100): den= 1217 eff=0.735  sims-with-cand all-fail frac=0.0054 (n=1104)  pair pass=0.7218 (N=17059)
+    pt[100,1000000000.0): den=  568 eff=0.322  sims-with-cand all-fail frac=0.0587 (n=511)  pair pass=0.4141 (N=12477)
+
+=== inclusive (all denom): den=10280 eff=0.8086 failures=1968
+  fail & has matched T5 in ntuple            : 694
+  fail & no T5, cand pairs, ALL fail T5 DNN   : 20
+  fail & no T5, cand pair passes DNN (killed later): 3
+  fail & no T5, no good cand pair             : 1251
+     of which n_good_t3(>0.75)==0            : 1120; n_good_ls==0: 655
+  [success sims] no T5 & all cand fail DNN    : 22 / 8312
+  sims w/ cand: 7081;  all-cand-fail-DNN frac = 0.0083
+  per-pair DNN pass rate: 0.7671 (N=61945);  exists|pass: 0.9393
+    pt[0.8,2): den= 4122 eff=0.807  sims-with-cand all-fail frac=0.0059 (n=2022)  pair pass=0.9633 (N=10075)
+    pt[2,5): den= 2114 eff=0.894  sims-with-cand all-fail frac=0.0040 (n=1507)  pair pass=0.9376 (N=7645)
+    pt[5,20): den= 2043 eff=0.899  sims-with-cand all-fail frac=0.0011 (n=1756)  pair pass=0.9085 (N=13105)
+    pt[20,100): den= 1410 eff=0.752  sims-with-cand all-fail frac=0.0063 (n=1265)  pair pass=0.7285 (N=18495)
+    pt[100,1000000000.0): den=  591 eff=0.332  sims-with-cand all-fail frac=0.0584 (n=531)  pair pass=0.4168 (N=12625)

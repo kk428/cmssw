@@ -1,0 +1,10 @@
+PURE pairs, fine sim-pT bins: pass rate and radius-consistency (median |log10 Rin/Rout|, |log10 Rbr/Rin|)
+ simpt[5,10):  core pass 0.967 N= 239 lr 0.010 lb 0.014 |  dR>=0.1 pass 0.950 N= 918 lr 0.010 lb 0.011 |  0.02-0.1 pass 0.947 N=1083 lr 0.010 lb 0.011 |
+ simpt[10,20):  core pass 0.926 N= 366 lr 0.015 lb 0.016 |  dR>=0.1 pass 0.966 N= 581 lr 0.014 lb 0.018 |  0.02-0.1 pass 0.942 N=1209 lr 0.016 lb 0.020 |
+ simpt[20,35):  core pass 0.934 N= 452 lr 0.025 lb 0.035 |  dR>=0.1 pass 0.930 N= 298 lr 0.026 lb 0.040 |  0.02-0.1 pass 0.889 N= 871 lr 0.025 lb 0.035 |
+ simpt[35,50):  core pass 0.805 N= 308 lr 0.049 lb 0.072 |  dR>=0.1 pass 0.957 N=  92 lr 0.037 lb 0.061 |  0.02-0.1 pass 0.845 N= 341 lr 0.038 lb 0.056 |
+ simpt[50,75):  core pass 0.779 N= 443 lr 0.070 lb 0.083 |  dR>=0.1 pass 0.916 N= 107 lr 0.055 lb 0.075 |  0.02-0.1 pass 0.836 N= 220 lr 0.064 lb 0.075 |
+ simpt[75,100):  core pass 0.721 N= 287 lr 0.135 lb 0.124 |  dR>=0.1 pass 0.733 N=  30 lr 0.093 lb 0.123 |  0.02-0.1 pass 0.763 N=  76 lr 0.084 lb 0.111 |
+ simpt[100,200):  core pass 0.547 N= 497 lr 0.161 lb 0.206 |  dR>=0.1 pass 0.860 N=  57 lr 0.223 lb 0.271 |  0.02-0.1 pass 0.622 N= 148 lr 0.153 lb 0.212 |
+ simpt[200,500):  core pass 0.383 N= 298 lr 0.401 lb 0.341 |  dR>=0.1 pass 0.474 N=  19 lr 0.183 lb 0.183 |  0.02-0.1 pass 0.288 N=  59 lr 0.389 lb 0.539 |
+ simpt[500,1000000000.0):  core pass 0.505 N=  95 lr 0.589 lb 0.420 |  dR>=0.1 N=3 |  0.02-0.1 pass 0.600 N=  15 lr 0.189 lb 0.272 |

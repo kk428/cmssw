@@ -1,0 +1,47 @@
+== core dR<0.02: denominator 1210, found 651, eff 0.5380
+      32  ( 2.64% of den)  0a no T5: <5 OT layers w/ simhits (no pLS)
+      19  ( 1.57% of den)  0a no T5: <5 OT layers w/ simhits (only triplet pLS)
+      24  ( 1.98% of den)  0a no T5: <5 OT layers w/ simhits (quad pLS exists, killed)
+       7  ( 0.58% of den)  0b no T5: <5 OT layers with MD
+      20  ( 1.65% of den)  0d no T5: T3s exist, T5 creation cuts
+      49  ( 4.05% of den)  1 all T5s removed in AfterBuild dedup
+      26  ( 2.15% of den)  2a T5 absorbed in pT5 with other pLS; sim has no pLS
+      17  ( 1.40% of den)  2b T5 absorbed in pT5 with other pLS; own pLS killed before pT5 building
+       9  ( 0.74% of den)  2c T5 absorbed in pT5 with other pLS; own pLS alive but pT5(own,own) not built
+      78  ( 6.45% of den)  3 own pT5 built, removed by pT5 dedup
+       2  ( 0.17% of den)  3x own pT5 alive (other)
+     275  (22.73% of den)  4 T5 removed in BeforeTC dedup
+       1  ( 0.08% of den)  4b T5 removed BeforeTC/CrossCleanT5
+== mid 0.02-0.1: denominator 1607, found 1344, eff 0.8363
+      30  ( 1.87% of den)  0a no T5: <5 OT layers w/ simhits (no pLS)
+      21  ( 1.31% of den)  0a no T5: <5 OT layers w/ simhits (only triplet pLS)
+      22  ( 1.37% of den)  0a no T5: <5 OT layers w/ simhits (quad pLS exists, killed)
+      13  ( 0.81% of den)  0b no T5: <5 OT layers with MD
+       2  ( 0.12% of den)  0c no T5: no T3
+      13  ( 0.81% of den)  0d no T5: T3s exist, T5 creation cuts
+       7  ( 0.44% of den)  1 all T5s removed in AfterBuild dedup
+       7  ( 0.44% of den)  2a T5 absorbed in pT5 with other pLS; sim has no pLS
+       4  ( 0.25% of den)  2b T5 absorbed in pT5 with other pLS; own pLS killed before pT5 building
+       2  ( 0.12% of den)  2c T5 absorbed in pT5 with other pLS; own pLS alive but pT5(own,own) not built
+      41  ( 2.55% of den)  3 own pT5 built, removed by pT5 dedup
+       4  ( 0.25% of den)  3x own pT5 alive (other)
+      91  ( 5.66% of den)  4 T5 removed in BeforeTC dedup
+       6  ( 0.37% of den)  4b T5 removed BeforeTC/CrossCleanT5
+== noncore dR>0.1: denominator 1633, found 1475, eff 0.9032
+      47  ( 2.88% of den)  0a no T5: <5 OT layers w/ simhits (no pLS)
+      24  ( 1.47% of den)  0a no T5: <5 OT layers w/ simhits (only triplet pLS)
+      12  ( 0.73% of den)  0a no T5: <5 OT layers w/ simhits (quad pLS exists, killed)
+      12  ( 0.73% of den)  0b no T5: <5 OT layers with MD
+      12  ( 0.73% of den)  0c no T5: no T3
+      16  ( 0.98% of den)  0d no T5: T3s exist, T5 creation cuts
+       1  ( 0.06% of den)  1 all T5s removed in AfterBuild dedup
+       9  ( 0.55% of den)  3 own pT5 built, removed by pT5 dedup
+       1  ( 0.06% of den)  3x own pT5 alive (other)
+      22  ( 1.35% of den)  4 T5 removed in BeforeTC dedup
+       2  ( 0.12% of den)  4b T5 removed BeforeTC/CrossCleanT5
+-- AB-only-lost sims (core): 35; their AB survivors: 63 ; own-hit count of survivors: {4: 3, 5: 48, 6: 82, 7: 103}
+   survivor fate: {'pof,no TC': 22, 'killed later': 22, 'pT5-TC': 19}  survivor fake(<=7/10): 50
+   per-sim best survivor own hits: {4: 1, 5: 8, 6: 13, 7: 13}
+-- AB-only-lost sims (noncore): 1; their AB survivors: 3 ; own-hit count of survivors: {5: 1, 6: 1, 7: 26}
+   survivor fate: {'killed later': 3}  survivor fake(<=7/10): 1
+   per-sim best survivor own hits: {7: 1}

@@ -1,0 +1,6 @@
+object-matched sims that the final TC no longer matches: 64
+{4: 18, 7: 46}
+core denominator sims affected: 26  of which ended up NOT found: 26  by type {7: 26}
+mid denominator sims affected: 7  of which ended up NOT found: 7  by type {7: 7}
+noncore denominator sims affected: 1  of which ended up NOT found: 1  by type {7: 1}
+extension GAINS (TC matches sim that its object did not): 0  den sims found only via that: {'core': 0, 'mid': 0, 'non': 0}

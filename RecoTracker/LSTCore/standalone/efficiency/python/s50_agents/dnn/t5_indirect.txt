@@ -1,0 +1,6 @@
+core: failing sims WITH matched T5: 457; of those with >=1 DNN-rejected good pair: 405; with >=1 rejected PURE pair: 196
+   mean #existing good T5 pairs: fail 11.4  success 9.4;  mean #rejected: fail 12.8  success 5.3
+   rejected fraction of good pairs: fail 0.529  success 0.359
+dR>=0.1: failing sims WITH matched T5: 35; of those with >=1 DNN-rejected good pair: 14; with >=1 rejected PURE pair: 8
+   mean #existing good T5 pairs: fail 8.0  success 5.0;  mean #rejected: fail 3.7  success 0.5
+   rejected fraction of good pairs: fail 0.313  success 0.097

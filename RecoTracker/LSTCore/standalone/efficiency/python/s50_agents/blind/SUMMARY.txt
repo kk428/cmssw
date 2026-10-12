@@ -1,0 +1,171 @@
+S50 blind diagnosis of jet-core inefficiency, S44 code (7a424adcef4).
+Input: LSTNtuple_s44_base_100evt.root (--allobj), 99 events (event 89 skipped). Offline only, read-only on code.
+Core = denominator selection from s44_eval_fixes.py with dR(sim, gen-jet axis) < 0.02.
+
+DENOMINATORS (99 events)
+  core  dR<0.02    : 1210 sims, 651 found (eff 0.538), 559 lost
+  mid   0.02-0.1   : 1607 sims, 1344 found (eff 0.836)
+  noncore dR>0.1   : 1633 sims, 1475 found (eff 0.903), 158 lost
+  all              : 4450 sims, eff 0.780
+Matching: an object or TC "has" a sim if more than 75% of its hits match that sim (the ntuple's matchfrac). The
+ntuple's *IdxAll lists hold ONLY matches above 0.75, so partial matches (e.g. a 7/10 T5) count as "fake" here.
+
+METHOD
+ * b01/b02/b05: per-sim, per-stage matched objects; T5 fates from t5_isDupBits (bit0 AfterBuild, bit1 BeforeTC,
+   bit4 CrossCleanT5), partOfPT5, tightCutFlag.
+ * Exact offline REPLAYS of the dedup kernels, rebuilding hit identities from MD/pLS hit coordinates:
+     - RemoveDupQuintupletsAfterBuild: agrees with bit0 for 66534/66534 sim-matched T5s       (b04)
+     - RemoveDupQuintupletsBeforeTC  : agrees with bit1 for 1177/1185 non-pT5 T5s              (b04)
+     - RemoveDupPixelQuintupletsFromMap: agrees with isDup for 21671/21721 pT5s                (b09)
+     - BeforeTC -> CrossCleanT5 -> AddT5asTrackCandidate: reproduces 2175/2176 T5 TCs           (b11)
+   Because the replays match, the counterfactuals for these stages (b11, b13, b15) are exact. The exceptions are
+   the neglected CrossCleanpLS/CrossCleanT4 side effects, and T5s that AfterBuild had killed, whose pT5 building
+   cannot be replayed.
+ * Creation-time cuts are invisible. They are inferred when a sim has the lower objects but not the higher one.
+
+1) FAILURE FUNNEL: lost sims by the furthest stage reached (b12_funnel.txt). The groups do not overlap.
+                                                                    core(1210)    mid(1607)   noncore(1633)
+ no T5:  <5 OT layers with sim hits (interacting/decaying hadrons)   75 (6.2%)    73 (4.5%)    83 (5.1%)
+           of which: no pLS 32 / only triplet pLS 19 / quad pLS killed 24     (noncore: 47/24/12)
+         >=5 sim layers but <5 MD layers                              7 (0.6%)    13           12
+         no T3                                                        0            2           12
+         T3s exist, no T5 (T5 creation cuts)                         20 (1.7%)    13           16 (1.0%)
+ T5 exists, but ALL matched T5s removed in AfterBuild dedup          49 (4.0%)     7            1 (0.06%)
+ T5 absorbed (partOfPT5) by a pT5 built with ANOTHER track's pLS     52 (4.3%)    13            0
+           (sim has no pLS 26 / own pLS killed pre-pT5 17 / own pLS alive, pT5(own,own) never built 9)
+ own pT5 (own pLS + own T5) built, killed in pT5 dedup               78 (6.4%)    41 (2.6%)     9 (0.55%)
+ T5 survives to the T5-TC stage, killed by BeforeTC dedup
+   (+CrossCleanT5), or not tight                                    276 (22.8%)   97 (6.0%)    24 (1.5%)
+ own pT5 alive but final TC not matched                               2            4            1
+ TOTAL lost                                                         559          263          158
+
+ Two facts are underneath this funnel:
+  (a) No matched pixel seed. 23.2% of core sims have no pLS matched above 0.75, versus 6.4% noncore.
+      Efficiency without a pLS: core 0.15 (pT<100) and 0.05 (pT>100); noncore 0.27.
+      Efficiency with a pLS: core 0.79 (pT<100) and 0.40 (pT>100); noncore 0.95.        (b16)
+      The T5-only path almost never yields a TC in the core, so every sim without a pLS is nearly always lost.
+      The pLS deficit is in the input seeds: LSTPrepareInput applies only a seed-type and pT cut, so this is not an
+      LST cut.
+  (b) The core is high-pT: 444/1210 core sims have pT>100 GeV, versus 22/1633 noncore. Core efficiency by pT:
+      0.73 (20-50 GeV), 0.55 (50-100), 0.35 (100-200), 0.21 (200-500).
+
+2) SPECIFIC CUTS AT THE BIG STAGES
+ [S1] tightCutFlag is never set for T5s with inner-pT > 100 GeV. MEASURED: tight = 0 for 13923/13923 sim-matched T5s
+      with t5_pt > 100; tight = 1 for 90% below 100.
+      Code: Quintuplet.h passT5RZConstraint. The `inner_pt > 100 || NaN` branch returns `rzChiSquared < 4.677` before
+      tightCutFlag is ever assigned. The flag arrives as false (CreateQuintuplets initialises it false, then
+      `tightCutFlag and inference`).
+      AddT5asTrackCandidate requires tightCutFlag, so a T5 above 100 GeV can never become a T5 TC; it can only be
+      found through a pT5. This looks like a bug.
+      The fix on its own recovers 0 sims, because those T5s are also killed by [S2] (b11).
+ [S2] RemoveDupQuintupletsBeforeTC plus CrossCleanT5 remove distinct core tracks.
+      Kill condition: [(dR2<1e-3 or nShared>=5) and d2emb<1] or [dR2<0.02 and d2emb<0.1]. dR2 uses the T5
+      position eta/phi (anchor of MD 2). A partOfPT5 T5 always wins.
+      In the core essentially every neighbour pair has dR2 < 1e-3 (a 0.032 cone).
+      For lost core sims (b10):
+        - 22132/22276 kill pairs pass through the dR2<1e-3 branch
+        - 15896/22276 kills share 0 hits with the victim
+        - median embedding d2 = 0.30, so the embedding does not separate neighbouring jet tracks
+        - 15022/22276 kills come from the partOfPT5 priority branch
+        - killers: 65% fake T5s, 33% other-sim T5s, 2% own-sim T5s
+      CrossCleanT5 applies the same embedding test against every pT5 (including duplicates). Relaxing BeforeTC
+      alone is therefore undone by CrossCleanT5; both have to change.
+      Of the 276 core sims in this bucket, 157 have no tight T5 ([S1]) and 119 have a tight T5 killed by the dedup.
+      Ceiling (tight fix plus no BeforeTC/CrossCleanT5): +281 core, but +40.8k fake T5 TCs, because after AfterBuild
+      the T5 pool is mostly fakes. The dedup does needed fake removal, so the fix must be selective (see 3).
+      Discriminators among T5s this would rescue (b11_dump):
+        - T5 score_rphisum median: 2.4 for rescued real tracks vs 154 for fakes
+        - T5 pT median: 81 GeV vs 7 GeV
+        - T5 DNN score separates weakly: median 0.81 vs 0.62
+ [S3] pT5 dedup keeps the wrong pT5 (RemoveDupPixelQuintupletsFromMap). The rank is the pT5 rPhiChiSquared, i.e. the
+      T5 hits fitted to the pixel-seed circle, which is poorly constrained at high pT. Median victim pLS pT is 84 GeV.
+      What beat the own pT5 for the 78 core sims (473 kill rows, b09):
+        - the same pLS with a fake (mixed-hit) T5: 215 rows
+        - the same pLS with another own T5, which was itself killed in turn (the dedup is not transitive): 161 rows
+        - other combinations: the rest
+      Exact counterfactuals (b13):
+        - oracle ranking: +101 core / +52 mid / +9 noncore
+        - rank by pT5chi2*(1-T5dnn): +29 / +28 / +8, with fake pT5 TCs -40
+        - rank by T5 score_rphisum: +33 / +17 / +1, with fake pT5 TCs +47
+ [S4] ExtendTrackCandidatesFromDupT5 breaks TC matching. Extra layers taken from duplicate T5s (>=8 shared hits,
+      d2emb<1) add another track's hits. 34 sims had a matching pT5 object but an unmatched final TC:
+      26 core / 7 mid / 1 noncore. Extension never creates a match (0 gains). MEASURED and exact (b14).
+ [S5] pT5 hijack (52 core). The own T5 is paired at pT5 building with another track's pLS. 67 of the 68 surviving
+      absorbing pT5 TCs are fakes. partOfPT5 is set at creation and stays set even if that pT5 later loses the
+      dedup, so the T5 can never be a T5 TC.
+      If no fake pT5 had been built (oracle), core gains +101, the same as the pT5-dedup oracle: the freed T5s then
+      die in [S1]/[S2].
+ [S6] AfterBuild dedup (49 core). This is the same lower module, >=7 shared hits, keeping the lowest
+      score_rphisum. For the 35 core sims checked, the surviving T5s hold only 4-7 of the sim's own hits: mixtures
+      that pass the chi2 ranking. The counterfactual cannot be replayed, because pT5 building for the restored T5s is
+      unknown.
+ [S7] pLS-only route for tracks with <5 OT layers. pLS TCs need quad seeds. Core finds 9/84 such sims, noncore
+      70/153. Of the 24 core quad pLSs that were killed, 16 share hits only with fake pLSs and 6 share hits with
+      another sim's pLS.
+
+3) RANKED SOURCES (upper bound = sims recoverable per 99 events, about per 100; core / mid / noncore)
+ Rank Source                                         Bound core/mid/non  Realistic (measured)       Core-specific? Confidence
+ 1  T5-path collapse in core: BeforeTC+CrossCleanT5  281/97/23 (ceiling,  B: +42/+12/+4, fakes +35    yes (22.8% vs   high (exact replay)
+    angular/embedding dedup [S2] together with the    +40.8k fakes)       C: +66/+30/+8, fakes +154   1.5%)
+    pT>100 tightCutFlag bug [S1]
+ 2  pT5 dedup ranking [S3]                           101/52/9 (oracle)    A: +29/+28/+8, fakes -40    yes (6.4% vs    high (exact replay)
+                                                                          (even/odd halves +16/+13)   0.55%)
+ 3  No matched pixel seed (input) -> LST cannot find  ~254 core lost sims  needs the T5 path (#1)      yes (23% vs     high (measurement),
+    the track without one                             have no pLS                                     6.4% no pLS)    outside LST cuts
+ 4  pT5 hijack by a wrong pLS + sticky partOfPT5 [S5] 52/13/0 (labels)    no gain alone (oracle +0     yes             medium
+                                                                          beyond #2); only together
+                                                                          with #1
+ 5  AfterBuild dedup chooses a mixed T5 [S6]          49/7/1               not replayable              yes             medium (bound only)
+ 6  TC hit extension from duplicate T5s [S4]          26/7/1               exact if disabled/restricted yes            high
+ 7  pLS-route losses for <5-OT-layer tracks [S7]      ~43 core (triplet-  -                           partly (core     medium
+    (pLS cleaning, triplet seeds not TC-eligible)     only 19 + quad                                  9/84 found vs
+                                                      killed 24)                                      70/153 noncore)
+ 8  T5 creation cuts with T3 present                  20/13/16             not visible                 weakly (1.7% vs medium
+                                                                                                      1.0%)
+ 9  MD/LS/T3 stages                                   7/15/24              -                           no (general)    high
+ Combined (b15, exact replays, object-level, so it excludes #6):
+   A+B: +71 core (+5.9 pp), +40 mid, +12 noncore, fakes -5 (fake rate 18.39% -> 18.11%)
+        even/odd halves: +35 / +36 core
+   A+C: +95 core (+7.9 pp), +58 mid, +16 noncore, fakes +114
+   Adding #6 gives about +26 core more, roughly additive.
+   Expected core efficiency: 0.538 -> about 0.62 (A+B+#6) or about 0.64 (A+C+#6).
+   Ceiling of everything replayable: +373 core (core eff about 0.85), but only with perfect fake rejection.
+ Noise and statistics. The GPU nondeterminism (±5 core tracks per 1000 events) is negligible at 99 events.
+ Sample statistics are about ±sqrt(N), e.g. 42±6, 29±5.
+ The B/C cut values (score_rphisum<3 with T5 pT>50 or >20) and key A were picked from about 7+20 tried variants on
+ these same 99 events. The even/odd splits are stable, but these values must be confirmed on independent events.
+
+4) TOP RECOMMENDATION
+ Fix the T5 -> T5-TC gate for dense, high-pT cores. Three parts:
+  (i)   In passT5RZConstraint, set tightCutFlag in the inner_pt>100 / NaN branch. It is currently never set, so every
+        T5 above 100 GeV is barred from being a TC.
+  (ii)  In RemoveDupQuintupletsBeforeTC and CrossCleanT5, stop removing a well-fitted, high-pT T5 on angular and
+        embedding proximity alone. For T5s with score_rphisum<3 and pT>50, require >=5 shared hits (>=3 against a
+        pT3's T3).
+        Measured: +42 core, +12 mid, +4 noncore for +35 fake TCs.
+        With pT>20 instead: +66 core, +30 mid, +8 noncore for +154 fakes.
+  (iii) Change the pT5 dedup rank from pT5 rPhiChiSquared to one that includes T5 quality, e.g.
+        pT5chi2*(1-T5dnn). Measured: +29 core, +28 mid, +8 noncore, fakes not increased.
+ Together, (i)+(ii)+(iii) give +71 core sims per 99 events (0.538 -> about 0.60) at an unchanged fake rate.
+ Restricting the TC hit extension in dense regions adds about +26 core.
+ Biggest single lever: (i)+(ii). That is the 22.8%-of-core bucket and the only route for the 23% of core tracks
+ without a matched pixel seed.
+ Validation needs a GPU run with these changes on independent events (user approval required). The CrossCleanpLS
+ and T4 interplay of the new T5 TCs is not replayed offline.
+
+FILES (all scripts are runnable offline; *.pkl are intermediate tables)
+ bcommon.py            shared loader (hit-level reconstruction of MD/T3/T5/pLS/pT5 from the ntuple)
+ b01_simtable.py       denominator + per-stage matching table
+ b02_t5fate.py, b03_t5reasons.py(.txt)   per-T5 fate and reasons
+ b04_replay_t5dedup.py (b04_valid.txt, b04_kills.pkl)   exact AfterBuild/BeforeTC replay and killers
+   (b04_replay_ab.py is a superseded, too-slow first version; it is unused)
+ b05_noT5.py           lower-stage funnel (MD/LS/T3/pLS)
+ b06_pt5.py, b09_pt5dedup.py (b09_valid.txt)   pT5-level diagnosis and exact pT5-dedup replay
+ b07_pls.py, b08_pls_alive.py   pLS cleaning diagnosis
+ b10_t5killers.py(.txt)  who kills lost-sim T5s in AfterBuild/BeforeTC
+ b11_btc_counterfactual.py(.txt)  BeforeTC/CrossCleanT5/tight variants (exact replay)
+ b12_funnel.py(.txt)   mutually exclusive funnel
+ b13_pt5rank.py(.txt)  pT5 dedup ranking variants and oracle
+ b14_tcext.py(.txt)    TC hit-extension match losses
+ b15_combined.py(.txt) combined chain replay, ceilings, even/odd stability
+ b16_pls_presence.txt  efficiency vs pLS presence and pT

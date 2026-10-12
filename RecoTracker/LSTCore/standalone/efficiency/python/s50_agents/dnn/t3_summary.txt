@@ -1,0 +1,37 @@
+T3 pairs: 49867  exists but fails recomputed DNN (should be 0): 0
+
+=== core dR<0.02: failures=559
+  fail & no T5 & no good T3 : 69
+     with good LS pair(s), ALL fail T3 DNN (upper bound on T3-DNN kill): 0
+     with good LS pair(s), some pass T3 DNN but no T3 (pointing/rz/occupancy): 0
+     no good LS pair at all: 69
+  [all failures] with >=1 good-LS-pair whose would-be T3 is missing & fails DNN: 8
+  per-pair T3 DNN pass: 0.9895 (N=6737), exists: 0.9639, exists|pass: 0.9742
+     pt[0.8,5): pass=1.0000 N=169  median prompt=0.644
+     pt[5,20): pass=0.9940 N=1003  median prompt=0.263
+     pt[20,100): pass=0.9890 N=3092  median prompt=0.198
+     pt[100,1000000000.0): pass=0.9875 N=2473  median prompt=0.284
+
+=== jet dR>=0.1: failures=158
+  fail & no T5 & no good T3 : 102
+     with good LS pair(s), ALL fail T3 DNN (upper bound on T3-DNN kill): 0
+     with good LS pair(s), some pass T3 DNN but no T3 (pointing/rz/occupancy): 4
+     no good LS pair at all: 98
+  [all failures] with >=1 good-LS-pair whose would-be T3 is missing & fails DNN: 1
+  per-pair T3 DNN pass: 0.9856 (N=8676), exists: 0.9593, exists|pass: 0.9733
+     pt[0.8,5): pass=0.9916 N=5241  median prompt=0.710
+     pt[5,20): pass=0.9690 N=2423  median prompt=0.320
+     pt[20,100): pass=0.9955 N=882  median prompt=0.202
+     pt[100,1000000000.0): pass=0.9846 N=130  median prompt=0.297
+
+=== inclusive: failures=1968
+  fail & no T5 & no good T3 : 1120
+     with good LS pair(s), ALL fail T3 DNN (upper bound on T3-DNN kill): 0
+     with good LS pair(s), some pass T3 DNN but no T3 (pointing/rz/occupancy): 21
+     no good LS pair at all: 1099
+  [all failures] with >=1 good-LS-pair whose would-be T3 is missing & fails DNN: 17
+  per-pair T3 DNN pass: 0.9851 (N=49867), exists: 0.9374, exists|pass: 0.9515
+     pt[0.8,5): pass=0.9878 N=27260  median prompt=0.698
+     pt[5,20): pass=0.9814 N=11464  median prompt=0.300
+     pt[20,100): pass=0.9827 N=7851  median prompt=0.194
+     pt[100,1000000000.0): pass=0.9815 N=3292  median prompt=0.284

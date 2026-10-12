@@ -1,3 +1,108 @@
+# Ideal-pLS Efficiency Ceiling + Pixel-Seeding Survey — Handoff (Session 51, 2026-10-08)
+
+## 1. Jet-core ceiling: PR277 + PR286 + synthetic pLS (`--idealpls`) + measured switches
+Runner `efficiency/run_s51_ideal_ceiling.sh` (research binary, no rebuild; PR286 = `LST_PT5_DEMOTE_SCORE=50 LST_PT5_UNSTALE=1`; `trackingNtuple-1000.root --jet --idealpls -n 1000 -s 4`; retries the transient "only 0 devices" CUDA error caused by another user's cmsRun jobs on GPU 0). Results in `efficiency/s44_fixes_log.txt` (tags `s51_*`), ntuples/NumDen `*_s51_<tag>_1000evt.root`.
+
+| Run (1000 evt, ideal pLS) | core ΔR<0.02 | Δcore vs PR286 mean (9380) | core pT>100 | all | n_TC | fake | dup |
+|---|---|---|---|---|---|---|---|
+| ideal_base (no env) | 0.8369 | −145 | 0.750 | 0.913 | 155.1k | 0.120 | 0.058 |
+| ideal_pr286 / rep1 | 0.8503 / 0.8497 | 0 (±4) | 0.777 | 0.917 | 155.4k | 0.118 | 0.059 |
+| + Fix B `LST_PLS_DISTINCT_HITS=1` | 0.8496 | −5 (noise) | 0.776 | 0.917 | 155.4k | 0.118 | 0.059 |
+| + `LST_PLS_T5EMBED_SCALE=0.5` | 0.8590 | +99 | 0.784 | 0.928 | 157.7k | 0.116 | **0.078 (+1.9 pp)** |
+| + `LST_PLS_T5EMBED_SCALE=0` | 0.8628 | +141 | 0.787 | 0.931 | 160.1k | 0.114 | **0.104 (+4.5 pp)** |
+| + `LST_PLS_T5EMBED_SCALE=0.9` | 0.8523 | +25 | 0.779 | 0.920 | 155.8k | 0.117 | 0.062 (+0.3 pp) |
+| **+ `LST_PLS_T5EMBED_SCALE=0.75`** | **0.8550** | **+55** | 0.780 | 0.923 | 156.4k | 0.117 | 0.067 (+0.8 pp) |
+| + `LST_PT5_DEDUP_KEY=1` | 0.8507 | +7 (noise) | 0.777 | 0.918 | 155.3k | 0.117 | 0.059 |
+
+Reference, real pLS: base mean 0.7595; PR286 0.804 (fake 0.134, dup 0.025).
+- **Ceiling within the ≤+1 pp fake/dup tolerance = ideal pLS + PR286 + `LST_PLS_T5EMBED_SCALE=0.75` = 0.855** (embed scan 1/0.9/0.75/0.5/0: dup 0.059/0.062/0.067/0.078/0.104). Without the embed switch: 0.850 (seeds +4.6 pp over real-pLS PR286; PR286 adds +1.3 pp on top of ideal seeds vs +4.5 pp with real seeds).
+- Fix B and key1 do nothing with one perfect seed per sim. The CrossCleanpLS embedding scale is the only extra lever, and it costs more dup with ideal pLS (+1.9 / +4.5 pp) than with real pLS (+0.4 / +0.55 pp). Fake rate goes down slightly. No combined ceiling run was needed.
+- Note: ideal-pLS dup rate is 0.059 vs 0.025 with real pLS, even before any switch.
+
+## 2. Pixel-seeding survey (3 read-only agents; scope now includes the inner tracker)
+- **Offline** (our ntuples): legacy CPU CA. initialStep (algo 4) = `CAHitQuadrupletEDProducer`; highPtTripletStep (22) = CA triplets after masking clusters of highPurity initialStep tracks. No cluster splitting. Ntuple `see_*` also has algos 5, 6, 13, 23, 24; LST keeps 4 and 22 only.
+- **HLT_75e33**: Alpaka CA extended into OT layers (#48921) → DNN high-purity selection (#51042) → `hltInitialStepSeeds` → `hltInputLST`. This has been the default since 16_1_0 (#50040). It is not what our offline studies use.
+- Local repo is based on a 20_1_X nightly (2026-09-23), sparse: only RecoTracker/LST, LSTCore, LSTGeometry, DataFormats/SoATemplate. Release base `/cvmfs/cms.cern.ch/el9_amd64_gcc13/cms/cmssw/CMSSW_16_1_1/src`.
+- **ptErr unit bug:** `Validation/RecoTrack/plugins/TrackFromSeedProducer.cc:146-148` stores a perigee covariance (curvature ρ) where `reco::Track` expects curvilinear q/p, so `see_ptErr` is ~88/coshη too small. Local `RecoTracker/LST/plugins/alpaka/LSTInputProducer.cc:164-177` copies the same formula. `see_stateCurvCov[0]` gives the correct error (pulls ≈ 1). True seed 1/pT resolution: 23–33% at 50–150 GeV, 75–100% above 150 GeV. LST uses ptErr in `LSTPrepareInput.h:116`, `PixelTriplet.h:585,887,1150` and `NeuralNetwork.h:426` (DNN input → retrain).
+- Ranked inner-tracker handles:
+  1. ptErr fix.
+  2. Admit more seed algos (pixelPair needs 2-hit pLS; there is an assert at `LSTPrepareInput.h:144`) or unmask highPtTriplet clusters.
+  3. Cluster splitting + JetCore (`splitClustersInPhase2Pixel`, `jetCoreInPhase2`; workflows .19001/.19002; needs new ntuple production; retune splitter ptMin 200 GeV, ΔR 0.05).
+  4. Loosen cluster-shape filters / CA χ² for merged clusters.
+  5. CPE error inflation for big clusters.
+  6. HLT Alpaka CA dupPassThrough / shared-hit cut.
+  7. DeepCore for Phase-2 (excluded from the Phase2 era; needs retraining).
+- Merging check (5 evt): core pixel hits come from more than one sim 15.7% of the time vs 1.9% outside jets. Merged core clusters are ~3.6×3.6 pixels.
+
+## Next steps (proposed)
+- Decide the target chain: offline legacy seeding or HLT Patatrack.
+- Cheap first studies: ptErr fix (standalone: use `see_stateCurvCov`), admitting algos 23/24 (and 6), unmasking.
+
+---
+
+# PR #286 Cleanup — Handoff (Session 49, 2026-10-05)
+
+- **PR #286 (SegmentLinking/cmssw, head `kk428:claude-edits`) was force-pushed to a clean history:** merge base `80c037ed173` → PR277's original commits (`639e39fd54b` T5 DNN, `79de2d4499b` T4 DNN) → `703ac1dd168` (the 3 fixes hard-coded: `kpT5DemoteScore = 50` in `interface/alpaka/Common.h`, `ResetPartOfPT5` always on, the CrossCleanT4 demoted-pT5 rule). No env vars, no instrumentation, no research files: 25 files (4 of them this PR's own, +68 lines).
+- **The research history now lives on `claude-research`** (local branch renamed from `claude-edits`; pushed as `origin/claude-research` = old `b83dc8ccec6`). This main working tree is on `claude-research`. **Don't push it to `claude-edits`.**
+- **Clean branch worktree:** `/mnt/data1/kk829/pr286_clean` (sparse: RecoTracker/LSTCore + RecoTracker/LST; built with `-G`, its own `createPerfNumDenHists`). Same env trap as the S44 worktree. Remove with `git worktree remove /mnt/data1/kk829/pr286_clean` once the PR no longer needs edits.
+- **Validation (1000 evt, `trackingNtuple-1000.root --jet -s 4`):** clean build core 8874 / 8877 (0.804), fake 0.134, dup 0.025, which equals the research binary with `LST_PT5_DEMOTE_SCORE=50 LST_PT5_UNSTALE=1` (8884 in S47, 8849 on a repeat today, so noise here is ~±35). Ntuples `Ntuple-files/LSTNtuple_s49_{pr286clean,pr286clean_rep1,research_demote50_unstale_rep1}_1000evt.root`.
+- PR description was rewritten (no gh CLI, so it has to be pasted by hand).
+
+---
+
+# Dedup-Tuning Argument Figures + AfterBuild-Off Run (timed out) — Handoff (Session 48, 2026-09-27 → 2026-09-28)
+
+## TL;DR
+
+The goal was figures arguing that tuning the S44-era dedup cuts is unproductive, i.e. that loosening them only lets in junk. An exact offline replay of all 7 oat7 dedup cuts on `LSTNtuple_s44_base_100evt.root` needs no LST rerun. **After a matching bug was fixed, the argument holds cleanly only for the 5 BeforeTC cuts.** Turning `PT5_NM` fully off genuinely recovers +9.9 pp jet-core efficiency at the dedup stage (upper bound), at a cost of ~17 junk objects per event in the core. That matches S43 (dedup-off +76–97) and S44 (+104 ceiling). The real LST run of S44 base with AfterBuild off (`LST_AB_NMATCHED=11`, 100 evt) **timed out at 6 h**; it has not been redone yet.
+
+## ⚠️ STATE
+
+- **Git:** the S46/S47 switches **are now committed and pushed**: `b83dc8ccec6` "Updated fixes w/ PR277" on `claude-edits` = `origin/claude-edits`. That commit was amended to drop the 220 MB `records.pkl`, and `*.pkl` was added to `standalone/.gitignore`. (The S47 section below still says "nothing committed"; that is out of date.)
+- **Main working tree binary:** unchanged (the S47 build of HEAD).
+- **S44 build in a separate sparse worktree:** `/mnt/data1/kk829/s44_worktree` (detached at `7a424adcef4` = `claude-edits-backup`, the S44 code; fix switches default off). Built with `lst_make_tracklooper -G` plus its own `efficiency/bin/createPerfNumDenHists`. Environment trap: `source setup.sh; cmsenv; source setup.sh` in the MAIN standalone first, then `cd` to the worktree standalone and `source setup.sh`. Skipping cmsenv makes the build pick up `CMSSW_14_2_0_pre4`, and it fails on `SoABlocks.h`. Remove it when done with `git worktree remove /mnt/data1/kk829/s44_worktree`.
+- **Stale outputs from the timed-out run:** `Ntuple-files/LSTNtuple_s48_ABoff_100evt.root` (partial) and `...killed_partial.root`. **Move or delete both before rerunning:** lst_cuda refuses to overwrite an existing output ("ERROR: output already exists").
+
+## 1. Offline dedup-threshold replay (exact, no LST rerun)
+
+- `efficiency/python/s48_dedup_threshold_hists.py` plus the C++ helper `s48_pairmax.cc` → `s48_pairmax.so` (build with `g++ -O3 -march=native -shared -fPIC -o s48_pairmax.so s48_pairmax.cc`; ctypes). For every object and each oat7 cut (others at master defaults) it gives the cut value at which the object would survive. Run: `NPROC=40 SKIP_EVENTS=89 python3 efficiency/python/s48_dedup_threshold_hists.py Ntuple-files/LSTNtuple_s44_base_100evt.root 100 plots-files/s48_dedup_thresholds` (~7 min). Output: `plots-files/s48_dedup_thresholds/records.pkl` (220 MB, gitignored).
+- **Validation vs the GPU flags:** AfterBuild 3,431,678/3,431,678; pT5 FromMap 21,720/21,721; BeforeTC 99.2%, where every miss is a `partOfPT5` T5 (never TC-eligible anyway).
+- **Event 89 of that ntuple has 1.6M T5s** (median 14.5k). Its AfterBuild pair loop takes hours, so always skip it. Pure numpy blew one worker up to 82 GB, hence the C++ loop.
+- First-pass per-cut histograms: `efficiency/python/s48_plot_dedup_thresholds.py` → `plots-files/s48_dedup_thresholds/*.png`. The user found these unclear; superseded by §2.
+
+## 2. Argument figures (core only) — `efficiency/python/s48_plot_dedup_argument.py`
+
+- `CORE_DR=0.02` (default) → `plots-files/s48_dedup_argument/`; `CORE_DR=0.005` → `plots-files/s48_dedup_argument_dr0p005/`. ~20 s each. Figures: `tradeoff_core.png` (Δeff vs junk/event, plus a measured oat7 panel from `tune_dedup_log.txt`), `junk_per_recovered_core.png`, `projected_rates_core.png`, `ceiling_core.png` (S44 funnel buckets vs recoverable), `eff_vs_dR_core.png` (base vs cuts fully off in 8 ΔR bins), plus `numbers_core.tsv` and `eff_vs_dR_core.tsv`.
+- **Bug fixed late (2026-09-28):** objects were first counted only if the object's own η/φ was within ΔR<CORE of the jet axis. That undercounted recovery ~7×, because genuine T5/pT5s of core sims can point further out. Objects are now included if near the axis OR matched to a core-denominator sim. **The PNG headlines ("barely moves efficiency", "at most N tracks come back") were written before the fix and are now WRONG; the numbers in the TSVs are correct. Retitle before use.**
+- **Corrected jet-core numbers (S44 base, 99 evt, core den 1208, base eff 0.538):**
+
+| Cut fully off | recovered ΔR<0.02 | recovered ΔR<0.005 (den 361, base 0.34) | junk admitted (ΔR<0.02) |
+|---|---|---|---|
+| PT5_NM | 119 (+9.9 pp) | 41 (+11 pp) | 1,668 (≈17/evt) |
+| AB_NM (T5 level, not credible — see §3) | 448 (+37 pp) | 194 | ≈396k (≈4,000/evt) |
+| any BeforeTC cut | ≤ 20 (≤ +1.7 pp) | 6 | a few hundred |
+
+- Efficiency inside the core rises steeply with ΔR: 0.28 (ΔR<0.0025), 0.38, 0.53, 0.69, then 0.62–0.71 for 0.01–0.02. The user noted that the "53%" core figure hides the ~20–28% at the very centre.
+- **Base core TC rates, fake 60% / dup 0.1% (TCs within ΔR<0.02 of a jet axis): unverified**, check them against the ΔR fake-rate plots before quoting.
+
+## 3. Existing measured AB-off evidence
+
+`NumDen-files/LSTNumDen_AB{on,off}_scorefix{,_idealpls}_Jv1.root`: 50 evt, commit `bc4cc55` + dirty diff ("scorefix", contents unknown; matching ntuples `LSTNtuple_AB{on,off}_scorefix*_50evt.root` in the standalone root dir hold the gitdiff). AfterBuild fully disabled in source. Core ΔR<0.02: real pLS **0.524 → 0.449 (−7.5 pp)**; ideal pLS 0.714 → 0.678. So turning AfterBuild off LOWERS efficiency (pT5 dedup is flooded), and the replay's +37 pp at T5 level does not survive to TCs.
+
+## 4. AfterBuild-off LST run on S44 base (timed out)
+
+- Runner: `efficiency/run_s48_aboff.sh` (worktree `lst_cuda`, `LST_AB_NMATCHED=11`, `trackingNtuple-100.root --jet -n 100 -s 4`, 6 h timeout). It then makes the NumDen file, appends a `tag=s48_ABoff` row to `efficiency/s44_fixes_log.txt`, and makes comparison plots vs `NumDen-files/LSTNumDen_s44_base_100evt.root` in the default LST style (`performance/s44base_vs_ABoff_100evt_*/mtv/var/`). Status goes to `efficiency/.s48_aboff_runner.log`; the lst log is `efficiency/.s44_runlogs/s48_ABoff_100evt.log`.
+- Launch detached (survives logout; `KillUserProcesses=no`, Linger=no): `setsid nohup bash efficiency/run_s48_aboff.sh > efficiency/.s48_aboff_runner.log 2>&1 < /dev/null &`
+- **Result: `rc=124` after 21,601 s (2026-09-28 07:44).** No progress info (default verbosity prints nothing per event). Probably event 89.
+
+## Next steps (proposed, none launched)
+
+1. **AB-off rerun on 50 events** (events 0–49, which excludes event 89; lst_cuda can only do first-N or `specific_event_index`). Needs: `-n 50 -v 1` in the runner, a new tag, removal of the stale output, and a matching **S44 base run on the same 50 events** (worktree binary, no env) so the comparison is like for like. Update the runner's plot step to compare those two NumDen files.
+2. Retitle the §2 figures to match the corrected numbers. The honest argument: BeforeTC cuts give ~nothing; PT5_NM off gives up to ~+10 pp only by giving up pT5 duplicate removal (measured oat7 PT5_NM=13: n_TC 13.2k → 24.4k, dupfakerate 0.17 → 0.76); AB off measured −7.5 pp.
+3. Optional: measure the real (TC-level) PT5_NM-off gain on S44 base with real pLS using the worktree binary (`LST_PT5_NMATCHED=15`).
+
+---
+
 # LST-Internal Stage Scan on the Rebased Code (4 agents) — Handoff (Session 47, 2026-09-25)
 
 Four read-only agents (no source edits, builds or LST runs) scanned the current code (HEAD `e49be6e473d`) on `Ntuple-files/LSTNtuple_s45_rebased_100evt.root` (core ΔR<0.02: 1226 tracks, 316 failures, eff 0.742). Outputs are in `efficiency/python/s47_stage_scan/{early_md_ls,early_pixel,late_build,late_tc}/SUMMARY.txt`. **All gains are offline estimates per 100 evt (core /1226), not yet validated by LST runs.** Noise: ±~5 core tracks per 1000 evt.

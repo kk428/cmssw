@@ -1,0 +1,25 @@
+core pure failing pairs (simpt>=20): N=724; donor: dR>=0.1 pure pairs N=5180
+   swap radii (Rin,Rbr,Rout)                  : 0.741 flip to PASS
+   swap Rbridge only                          : 0.454 flip to PASS
+   swap Rout only                             : 0.198 flip to PASS
+   swap inner-T3 diffs (21,32)                : 0.166 flip to PASS
+   swap deta(all)                             : 0.132 flip to PASS
+   swap outer diffs (43,54)                   : 0.118 flip to PASS
+   swap dr(all)                               : 0.106 flip to PASS
+   swap dz(all)                               : 0.080 flip to PASS
+   swap hit1 position (eta1,|phi1|,z1,r1)     : 0.079 flip to PASS
+   swap dphi(all)                             : 0.016 flip to PASS
+
+control: dR>=0.1 pure passing pairs (simpt>=20) N=544 given CORE donor values -> fraction flipping to FAIL
+   swap Rbridge only                          : 0.314 flip to FAIL
+   swap radii (Rin,Rbr,Rout)                  : 0.206 flip to FAIL
+   swap Rout only                             : 0.121 flip to FAIL
+   swap outer diffs (43,54)                   : 0.107 flip to FAIL
+   swap inner-T3 diffs (21,32)                : 0.102 flip to FAIL
+   swap deta(all)                             : 0.047 flip to FAIL
+   swap dr(all)                               : 0.022 flip to FAIL
+   swap hit1 position (eta1,|phi1|,z1,r1)     : 0.019 flip to FAIL
+   swap dz(all)                               : 0.014 flip to FAIL
+   swap dphi(all)                             : 0.004 flip to FAIL
+core: |log10(Rin/Rout)| median 0.093 90% 0.870;  |log10(Rbr/Rin)| median 0.109
+dR>=0.1: |log10(Rin/Rout)| median 0.042 90% 0.445;  |log10(Rbr/Rin)| median 0.057

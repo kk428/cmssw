@@ -1,0 +1,76 @@
+S50 agent: do the LST DNN cuts cause jet-core inefficiency?  (S44 code, worktree 7a424adcef4)
+Data: Ntuple-files/LSTNtuple_s44_base_100evt.root, 99 events (event 89 skipped). Offline only, no builds/runs.
+Core = s44_eval_fixes.py denominator + sim_genjet_deltaR<0.02. Measured: den 1210, eff 0.538, 559 failures.
+Jet dR>=0.1: den 1633, eff 0.903, 158 failures. Inclusive (no jet requirement): den 10280, eff 0.809.
+
+METHOD (exact offline replay)
+ dnnlib.py re-implements the T3 and T5 classifier DNNs in numpy, with weights parsed from the S44 headers.
+ Validated on stored objects: T5 |score - t5_dnnScore| 99% < 4e-5 with the ORIGINAL weights (the retrained
+ weights do not match, so S44 ran with the original ones); 100% of stored T5s and T3s pass the recomputed WP;
+ T3 scores match t5_t3_*Score1 to 1e-4; betaIn rebuilt from MD anchors matches t3_betaIn to 1e-6.
+ T5 counterfactual (t5_replay.py): for each denominator sim, take all sim T3s (frac>=0.5), pair them the way
+ CreateQuintuplets does (inner T3 3rd MD == outer T3 1st MD; inner start layer in {B1,B2,E1}), require the
+ would-be T5 to be sim-matched (>0.75 of 10 hits from MD-level fractions), evaluate the DNN, and check
+ whether that T3 pair exists as a stored T5. Sanity: 0 stored T5s fail the replayed DNN; 91-94% of
+ DNN-passing good pairs exist (the rest fail dBeta/rz/occupancy).
+ T3 counterfactual (t3_replay.py): the same with LS pairs sharing an MD. The pointing and r-z cuts that run
+ before the T3 DNN are not replayed, so these numbers are upper bounds.
+
+WHERE EACH DNN SITS
+ T3 DNN   : creation-time hard cut (Triplet.h runTripletConstraintsAndAlgo, after pointing + r-z). Prompt OR
+            displaced score > per-(2 pT x 10 eta) WP.
+ T5 DNN   : creation-time hard cut, the FIRST T5 cut (Quintuplet.h runQuintupletDefaultAlgo, before dBeta
+            and r-z). Score > WP[pT>5][|eta1|/0.25]. 23 geometric inputs (5 anchor-hit eta/|phi|/z/r and
+            their differences, log10 of Rin/Rbridge/Rout). No density, occupancy or shared-hit inputs.
+            tightCutFlag = false && inference does nothing (the r-z table sets the flag afterwards).
+ T4 DNN   : creation-time cut that needs displaced>WP AND fake<WP, so it is displaced-only by design.
+ Score-based ranking: T5 dnnScore is used only in ExtendTrackCandidatesFromDupT5 (choosing which dup T5
+            extends a TC). pT5 dedup rank = pT5 chi2 score (LST_PT5_SCORE_MODE=0 default; the K5/DNN key is
+            off). T5 dedup (AfterBuild / BeforeTC) ranks on score_rphisum (chi2). BeforeTC and CrossCleanT5
+            use the T5 EMBEDDING-net distance d2 to decide "duplicate" (a different DNN; see S48 replay).
+
+ATTRIBUTION OF THE 559 CORE FAILURES (measured counts)
+  457  have a sim-matched T5 in the ntuple, so the T5 DNN let them through:
+         270 all matched T5s dup-killed (213 AfterBuild+BeforeTC, 49 AfterBuild only, 8 BeforeTC only)
+         186 T5 absorbed into a pT5 that did not become a TC
+         (dR>=0.1: 35 such failures)
+   10  no T5 but have good candidate pairs:
+          8  ALL good candidate pairs fail the T5 DNN  <-- direct T5-DNN loss (dR>=0.1: 1; inclusive: 20)
+          2  some pass the DNN but are killed by dBeta/rz/occupancy
+   92  no good T5 candidate pair (69 have no >0.75 T3; 29 have no >0.75 LS)
+          T3 DNN: 0 core failures whose good LS pairs ALL fail the T3 DNN (upper bound 0; dR>=0.1: 0).
+          Per-pair T3 DNN pass is about 0.99 everywhere (core 0.990, dR>=0.1 0.986, inclusive 0.985).
+          T4 DNN: at most 21 (core sims with >=2 T3s and no T5 candidate). 0 core sims have a matched T4,
+          and T4s target displaced tracks by design.
+ Direct T5-DNN loss: 8/559 = 1.4% of failures, 0.66 pp of the core denominator at most. All 8 have
+   sim pT 127-1013 GeV, best margin -0.001 to -0.27. Expected recovery is about 8 x P(TC|T5,core)=0.58,
+   so about 5 tracks (+0.4 pp), which is at the noise level (Poisson +-3; GPU noise +-5/1000 evt).
+ Indirect (UNRESOLVED offline): 405/457 core failures with a T5 also had DNN-rejected good pairs (196 of
+   them pure 10/10). Whether extra same-sim T5s would survive the dedup that kills the existing ones cannot
+   be replayed: it needs the embedding and chi2 of the rejected T5s. Not evidence of a DNN loss.
+
+CORE-SPECIFIC?  Per good-pair T5 DNN pass rate (t5_summary.txt / t5_mechanism.txt):
+   sim pT   core            dR>=0.1
+   5-20     0.911 (N 1579)  0.897 (N 2264)
+   20-100   0.680 (N 9734)  0.823 (N 1370)
+   >100     0.406 (N10092)  0.634 (N  363)
+ Pure (10/10-hit) pairs at fine sim pT are mostly similar (20-35: 0.93 vs 0.93; 75-100: 0.72 vs 0.73), with
+ a core deficit at 35-75 GeV (0.80/0.78 vs 0.96/0.92, non-core N about 100) and at 100-200 (0.55 vs 0.86,
+ N 57). The 0.02-0.1 annulus sits in between.
+ Mechanism: (1) the pass rate drops steeply with pT for everyone (a single pT>5 WP bin; above about 50 GeV
+ the 3 radii are dominated by noise: median |log10 Rin/Rout| goes 0.01 at 5 GeV, 0.07 at 60 GeV, 0.4 at
+ 300 GeV), and core tracks are much harder. (2) 85-91% of core candidate pairs carry 1-2 hits from another
+ particle (non-core 62-78%), and those pass less often (0.40 vs 0.49 pure at >100 GeV). (3) There is a
+ small residual: pure core pairs have slightly worse radius consistency at fixed pT.
+ Occlusion test (t5_occlusion.py): giving failing pure core pairs non-core radii flips 74% to pass (Rbridge
+ alone 45%), hit-difference groups 8-17%, |phi1|/position 8%, dphi 2%. So the low scores come from the
+ radius-consistency inputs.
+ Redundancy hides this: core sims have about 20 good candidate pairs each, so only 2.1% of core sims with
+ candidates lose all of them (dR>=0.1 0.5%, inclusive 0.8%). The effect is concentrated at >100 GeV (5.3%).
+
+VERDICT: the DNN cuts are NOT a significant cause of jet-core inefficiency on S44. The measurable direct
+ T5-DNN loss is <=8 of 559 core failures (about 5 recoverable, about +0.4 pp, noise level). T3 DNN: 0. T4: no
+ prompt role. Classifier-score ranking is not used in the default dedups. The core failures are 82% T5s
+ that were built and then lost downstream (dup-kill 270, pT5 absorption 186) and 16% missing T3/LS.
+ Confidence: high (about 90%) for the direct claim, from an exact validated replay. Moderate for
+ ruling out the indirect dedup interaction, which needs a GPU test (e.g. T5 WP pT>5 row set to 0).

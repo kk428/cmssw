@@ -1,4 +1,6 @@
 #include "helper.h"
+#include <cstdlib>
+#include <string>
 
 // Global variable
 AnalysisConfig ana;
@@ -241,9 +243,13 @@ void initializeInputsAndOutputs() {
 
 std::vector<float> getPtBounds(int mode) {
   std::vector<float> pt_boundaries;
-  if (mode == 0)
+  if (mode == 0) {
     pt_boundaries = {0, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.5, 2.0, 3.0, 5.0, 10, 15., 25, 50};
-  else if (mode == 1)
+    // LST_PT_BOUNDS_EXT=1 extends the standard pt binning to 2 TeV
+    const char* ext = std::getenv("LST_PT_BOUNDS_EXT");
+    if (ext && std::string(ext) == "1")
+      pt_boundaries.insert(pt_boundaries.end(), {100, 200, 500, 1000, 2000});
+  } else if (mode == 1)
     pt_boundaries = {0.988, 0.99, 0.992, 0.994, 0.996, 0.998, 1.0, 1.002, 1.004, 1.006, 1.008, 1.01, 1.012};  // lowpt
   else if (mode == 2)
     pt_boundaries = {0.955, 0.96, 0.965, 0.97, 0.975, 0.98, 0.985, 0.99, 0.995, 1.00,
